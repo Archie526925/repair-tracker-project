@@ -2,3 +2,5 @@ node_modules/
 .env
 dist/
 .pnpm-debug.log
+.cache/
+*.tar.gz

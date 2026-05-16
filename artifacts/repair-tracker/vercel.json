@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://repair-tracker-project.onrender.com"
+      "destination": "https://repair-tracker-project.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

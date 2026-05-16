@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "1MV9cddejURtObJWh_5U2"
+uri = "file://repair-tracker-project.tar.gz"
+type = "unspecified"
+title = "報修管理系統 - 完整專案"

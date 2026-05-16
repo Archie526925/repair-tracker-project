@@ -1,0 +1,689 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: 報修管理系統 API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: repairs
+    description: Repair record operations
+  - name: stats
+    description: Statistics operations
+  - name: customFields
+    description: Custom field definition operations
+  - name: categories
+    description: Category management operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /repairs:
+    get:
+      operationId: listRepairs
+      tags: [repairs]
+      summary: List all repair records
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: month
+          in: query
+          description: Filter by month (YYYY-MM format)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of repair records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Repair"
+    post:
+      operationId: createRepair
+      tags: [repairs]
+      summary: Create a repair record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repair"
+        "400":
+          description: Bad request
+
+  /repairs/{id}:
+    get:
+      operationId: getRepair
+      tags: [repairs]
+      summary: Get a repair record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Repair record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repair"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRepair
+      tags: [repairs]
+      summary: Update a repair record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairUpdate"
+      responses:
+        "200":
+          description: Updated repair record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repair"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRepair
+      tags: [repairs]
+      summary: Delete a repair record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /stats/monthly:
+    get:
+      operationId: getMonthlyStats
+      tags: [stats]
+      summary: Get monthly statistics
+      parameters:
+        - name: month
+          in: query
+          description: Month in YYYY-MM format (defaults to current month)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Monthly statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyStats"
+
+  /stats/summary:
+    get:
+      operationId: getSummary
+      tags: [stats]
+      summary: Get overall summary statistics
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Summary"
+
+  /custom-fields:
+    get:
+      operationId: listCustomFields
+      tags: [customFields]
+      summary: List all custom field definitions
+      responses:
+        "200":
+          description: List of custom field definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomField"
+    post:
+      operationId: createCustomField
+      tags: [customFields]
+      summary: Create a custom field definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomField"
+        "400":
+          description: Bad request
+
+  /custom-fields/{id}:
+    patch:
+      operationId: updateCustomField
+      tags: [customFields]
+      summary: Update a custom field definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomField"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteCustomField
+      tags: [customFields]
+      summary: Delete a custom field definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /repairs/{id}/custom-values:
+    put:
+      operationId: setRepairCustomValues
+      tags: [repairs]
+      summary: Set custom field values for a repair
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomValuesPayload"
+      responses:
+        "200":
+          description: Updated custom values
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomValue"
+        "404":
+          description: Repair not found
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "400":
+          description: Bad request
+
+  /categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /stats/trend:
+    get:
+      operationId: getTrend
+      tags: [stats]
+      summary: Get monthly trend over past 6 months
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendPoint"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Repair:
+      type: object
+      required:
+        - id
+        - title
+        - location
+        - category
+        - status
+        - priority
+        - reportedBy
+        - reportedAt
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        location:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        description:
+          type: ["string", "null"]
+        reportedBy:
+          type: string
+        assignedTo:
+          type: ["string", "null"]
+        reportedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+
+    RepairInput:
+      type: object
+      required:
+        - title
+        - location
+        - category
+        - priority
+        - reportedBy
+      properties:
+        title:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+        priority:
+          type: string
+          enum: [low, medium, high]
+        description:
+          type: string
+        reportedBy:
+          type: string
+          minLength: 1
+        assignedTo:
+          type: string
+        notes:
+          type: string
+
+    RepairUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        location:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        description:
+          type: string
+        reportedBy:
+          type: string
+          minLength: 1
+        assignedTo:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: string
+
+    MonthlyStats:
+      type: object
+      required:
+        - month
+        - total
+        - byStatus
+        - byCategory
+        - byPriority
+      properties:
+        month:
+          type: string
+        total:
+          type: integer
+        byStatus:
+          type: object
+          properties:
+            pending:
+              type: integer
+            in_progress:
+              type: integer
+            completed:
+              type: integer
+          required: [pending, in_progress, completed]
+        byCategory:
+          type: object
+          additionalProperties:
+            type: integer
+        byPriority:
+          type: object
+          properties:
+            low:
+              type: integer
+            medium:
+              type: integer
+            high:
+              type: integer
+          required: [low, medium, high]
+        avgResolutionDays:
+          type: ["number", "null"]
+
+    Summary:
+      type: object
+      required:
+        - total
+        - pending
+        - inProgress
+        - completedThisMonth
+        - highPriority
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        inProgress:
+          type: integer
+        completedThisMonth:
+          type: integer
+        highPriority:
+          type: integer
+
+    CustomField:
+      type: object
+      required: [id, name, fieldType, required, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        fieldType:
+          type: string
+          enum: [text, number, select, date]
+        options:
+          type: ["array", "null"]
+          items:
+            type: string
+        required:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    CustomFieldInput:
+      type: object
+      required: [name, fieldType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        fieldType:
+          type: string
+          enum: [text, number, select, date]
+        options:
+          type: array
+          items:
+            type: string
+        required:
+          type: boolean
+
+    CustomFieldUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        options:
+          type: array
+          items:
+            type: string
+        required:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    CustomValue:
+      type: object
+      required: [id, repairId, fieldId, value]
+      properties:
+        id:
+          type: integer
+        repairId:
+          type: integer
+        fieldId:
+          type: integer
+        value:
+          type: string
+
+    CustomValueInput:
+      type: object
+      required: [fieldId, value]
+      properties:
+        fieldId:
+          type: integer
+        value:
+          type: string
+
+    CustomValuesPayload:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomValueInput"
+
+    Category:
+      type: object
+      required: [id, slug, label, color, sortOrder]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        label:
+          type: string
+        color:
+          type: string
+        sortOrder:
+          type: integer
+
+    CategoryInput:
+      type: object
+      required: [slug, label]
+      properties:
+        slug:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        color:
+          type: string
+        sortOrder:
+          type: integer
+
+    CategoryUpdate:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+        color:
+          type: string
+        sortOrder:
+          type: integer
+
+    TrendPoint:
+      type: object
+      required:
+        - month
+        - total
+        - completed
+        - pending
+      properties:
+        month:
+          type: string
+        total:
+          type: integer
+        completed:
+          type: integer
+        pending:
+          type: integer

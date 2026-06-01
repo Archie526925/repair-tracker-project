@@ -4,10 +4,17 @@ import repairsRouter from "./repairs";
 import statsRouter from "./stats";
 import customFieldsRouter from "./custom-fields";
 import categoriesRouter from "./categories";
+import authRouter from "./auth";
+import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
+// Public routes
+router.use(authRouter);
 router.use(healthRouter);
+
+// Protected routes
+router.use(authMiddleware);
 router.use(repairsRouter);
 router.use(statsRouter);
 router.use(customFieldsRouter);

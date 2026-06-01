@@ -9,23 +9,34 @@ import NewRepair from "@/pages/repairs/new";
 import RepairDetail from "@/pages/repairs/detail";
 import CustomFields from "@/pages/settings/custom-fields";
 import Categories from "@/pages/settings/categories";
+import LoginPage from "@/pages/auth/login";
 import { AppLayout } from "@/components/layout/app-layout";
+import { AuthGuard } from "@/components/layout/auth-guard";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/repairs" component={RepairsList} />
-        <Route path="/repairs/new" component={NewRepair} />
-        <Route path="/repairs/:id" component={RepairDetail} />
-        <Route path="/settings/custom-fields" component={CustomFields} />
-        <Route path="/settings/categories" component={Categories} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      <Route path="/login" component={LoginPage} />
+      <Route path="/">
+        {(params) => (
+          <AuthGuard>
+            <AppLayout>
+              <Switch>
+                <Route path="/" component={Dashboard} />
+                <Route path="/repairs" component={RepairsList} />
+                <Route path="/repairs/new" component={NewRepair} />
+                <Route path="/repairs/:id" component={RepairDetail} />
+                <Route path="/settings/custom-fields" component={CustomFields} />
+                <Route path="/settings/categories" component={Categories} />
+                <Route component={NotFound} />
+              </Switch>
+            </AppLayout>
+          </AuthGuard>
+        )}
+      </Route>
+    </Switch>
   );
 }
 
@@ -33,7 +44,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/\/$/, "")}>
           <Router />
         </WouterRouter>
         <Toaster />

@@ -13,7 +13,10 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
-export * from "./schema";
+export * from "./schema/repairs";
+export * from "./schema/custom-fields";
+export * from "./schema/categories";
+export * from "./schema/users";
 
 export async function initializeDatabase() {
   await pool.query(`

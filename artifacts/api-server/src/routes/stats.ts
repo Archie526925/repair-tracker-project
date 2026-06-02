@@ -24,9 +24,9 @@ router.get("/stats/monthly", async (req, res) => {
       .from(repairsTable)
       .where(and(gte(repairsTable.reportedAt, start), lt(repairsTable.reportedAt, end)));
 
-    const byStatus = { pending: 0, in_progress: 0, completed: 0 };
+    const byStatus: Record<string, number> = { pending: 0, in_progress: 0, completed: 0 };
     const byCategory: Record<string, number> = {};
-    const byPriority = { low: 0, medium: 0, high: 0 };
+    const byPriority: Record<string, number> = { low: 0, medium: 0, high: 0 };
 
     let totalResolutionMs = 0;
     let resolvedCount = 0;

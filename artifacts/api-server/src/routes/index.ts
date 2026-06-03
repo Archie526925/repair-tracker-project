@@ -10,7 +10,7 @@ import { authMiddleware } from "../middlewares/auth";
 const router: IRouter = Router();
 
 // Public routes
-router.use(authRouter);
+router.use("/auth", authRouter);
 router.use(healthRouter);
 
 // Protected routes

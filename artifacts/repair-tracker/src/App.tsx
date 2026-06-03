@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,28 +15,23 @@ import { AuthGuard } from "@/components/layout/auth-guard";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function AppRouter() {
+  const [location] = useLocation();
+
+  if (location === "/login") return <LoginPage />;
+
   return (
-    <Switch>
-      <Route path="/login" component={LoginPage} />
-      <Route path="/">
-        {(params) => (
-          <AuthGuard>
-            <AppLayout>
-              <Switch>
-                <Route path="/" component={Dashboard} />
-                <Route path="/repairs" component={RepairsList} />
-                <Route path="/repairs/new" component={NewRepair} />
-                <Route path="/repairs/:id" component={RepairDetail} />
-                <Route path="/settings/custom-fields" component={CustomFields} />
-                <Route path="/settings/categories" component={Categories} />
-                <Route component={NotFound} />
-              </Switch>
-            </AppLayout>
-          </AuthGuard>
-        )}
-      </Route>
-    </Switch>
+    <AuthGuard>
+      <AppLayout>
+        {(location === "/" || location === "") && <Dashboard />}
+        {location === "/repairs" && <RepairsList />}
+        {location === "/repairs/new" && <NewRepair />}
+        {location.match(/^\/repairs\/\d+$/) && <RepairDetail />}
+        {location === "/settings/custom-fields" && <CustomFields />}
+        {location === "/settings/categories" && <Categories />}
+        {!["/", "", "/login", "/repairs", "/repairs/new", "/settings/custom-fields", "/settings/categories"].includes(location) && !location.match(/^\/repairs\/\d+$/) && <NotFound />}
+      </AppLayout>
+    </AuthGuard>
   );
 }
 
@@ -44,8 +39,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/\/$/, "")}>
-          <Router />
+        <WouterRouter>
+          <AppRouter />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

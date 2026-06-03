@@ -19,7 +19,11 @@ const DEFAULT_CATEGORIES = [
   { slug: "other", label: "其他", color: "#6b7280", sortOrder: 5 },
 ];
 
+let defaultsEnsured = false;
+
 async function ensureDefaults() {
+  if (defaultsEnsured) return;
+  defaultsEnsured = true;
   const existing = await db.select().from(categoriesTable);
   if (existing.length === 0) {
     await db.insert(categoriesTable).values(DEFAULT_CATEGORIES);

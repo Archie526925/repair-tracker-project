@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format, subMonths, addMonths } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import {
@@ -41,6 +41,7 @@ function toMonthStr(d: Date) {
 const nowMonth = toMonthStr(new Date());
 
 export default function RepairsList() {
+  const [, setLocation] = useLocation();
   const [selectedMonth, setSelectedMonth] = useState<string>(nowMonth);
   const [showAll, setShowAll] = useState(false);
   const [statusFilter, setStatusFilter] = useState<RepairStatus | "all">("all");
@@ -244,7 +245,7 @@ const filteredRepairs = useMemo(
                 <TableRow
                   key={repair.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => (window.location.href = `/repairs/${repair.id}`)}
+                  onClick={() => setLocation(`/repairs/${repair.id}`)}
                 >
                   <TableCell className="font-mono text-muted-foreground text-sm">#{repair.id}</TableCell>
                   <TableCell className="font-medium">{repair.title}</TableCell>

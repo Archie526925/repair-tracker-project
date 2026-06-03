@@ -74,8 +74,8 @@ export default function RepairDetail() {
   const queryClient = useQueryClient();
   const categoryMap = useCategoryMap();
 
-  const { data: repair, isLoading } = useGetRepair(id, {
-    query: { enabled: !!id, queryKey: getGetRepairQueryKey(id) },
+  const { data: repair, isLoading, error, isError } = useGetRepair(id, {
+    query: { enabled: !!id && !isNaN(id), queryKey: getGetRepairQueryKey(id) },
   });
 
   const { data: allCategories } = useListCategories({
@@ -177,6 +177,19 @@ export default function RepairDetail() {
             <Skeleton className="h-full w-full" />
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <p className="text-lg text-muted-foreground">
+          {error instanceof Error ? error.message : "載入失敗"}
+        </p>
+        <Button variant="outline" onClick={() => setLocation("/repairs")}>
+          返回列表
+        </Button>
       </div>
     );
   }

@@ -93,7 +93,11 @@ export default function RepairDetail() {
   const { data: customValues, refetch: refetchCustomValues } = useQuery({
     queryKey: ["repair-custom-values", id],
     queryFn: async () => {
-      const res = await fetch(`/api/repairs/${id}/custom-values`);
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`/api/repairs/${id}/custom-values`, { headers });
+      if (!res.ok) throw new Error(`Failed: ${res.status}`);
       return res.json() as Promise<CustomValueRow[]>;
     },
     enabled: !!id,
@@ -131,7 +135,7 @@ export default function RepairDetail() {
   }, [repair, editMode]);
 
   useEffect(() => {
-    if (customValues) {
+    if (customValues && Array.isArray(customValues)) {
       const map: Record<number, string> = {};
       for (const cv of customValues) map[cv.fieldId] = cv.value;
       setEditCustomValues(map);

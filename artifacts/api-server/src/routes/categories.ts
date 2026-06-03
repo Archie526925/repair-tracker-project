@@ -32,7 +32,6 @@ async function ensureDefaults() {
 
 router.get("/categories", async (req, res) => {
   try {
-    await ensureDefaults();
     const categories = await db
       .select()
       .from(categoriesTable)

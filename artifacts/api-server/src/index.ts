@@ -1,6 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { initializeDatabase } from "@workspace/db";
+import { initializeDatabase, db } from "@workspace/db";
+import { categoriesTable } from "@workspace/db";
+import { asc } from "drizzle-orm";
 
 const rawPort = process.env["PORT"];
 
@@ -17,6 +19,20 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 await initializeDatabase();
+
+// Seed default categories if table is empty
+const existingCats = await db.select().from(categoriesTable).limit(1);
+if (existingCats.length === 0) {
+  await db.insert(categoriesTable).values([
+    { slug: "electrical", label: "電氣", color: "#eab308", sortOrder: 0 },
+    { slug: "plumbing", label: "水管", color: "#3b82f6", sortOrder: 1 },
+    { slug: "structural", label: "結構", color: "#f97316", sortOrder: 2 },
+    { slug: "hvac", label: "空調", color: "#14b8a6", sortOrder: 3 },
+    { slug: "furniture", label: "家具", color: "#a855f7", sortOrder: 4 },
+    { slug: "other", label: "其他", color: "#6b7280", sortOrder: 5 },
+  ]);
+  logger.info("Seeded default categories");
+}
 
 app.listen(port, (err) => {
   if (err) {

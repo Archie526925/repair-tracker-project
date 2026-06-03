@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Wrench, Menu, Settings } from "lucide-react";
+import { LayoutDashboard, Wrench, Menu, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -81,6 +81,22 @@ function AppSidebar() {
                 </SidebarMenuItem>
               );
             })}
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup className="mt-auto">
+          <SidebarMenu className="px-2">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => {
+                  localStorage.removeItem("auth_token");
+                  window.location.href = "/login";
+                }}
+                tooltip="登出"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>登出</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

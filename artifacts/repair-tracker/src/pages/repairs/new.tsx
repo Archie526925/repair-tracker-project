@@ -45,6 +45,7 @@ const formSchema = z.object({
   category: z.string().min(1, "請選擇類別"),
   priority: z.nativeEnum(RepairInputPriority, { required_error: "請選擇優先級" }),
   reportedBy: z.string().min(1, "請輸入報修人姓名"),
+  reportedAt: z.string().min(1, "請選擇報修日期"),
   description: z.string().optional(),
 });
 
@@ -94,13 +95,14 @@ export default function NewRepair() {
       reportedBy: "",
       description: "",
       priority: RepairInputPriority.medium,
+      reportedAt: new Date().toISOString().split("T")[0],
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (customFields) {
       const missing = customFields.filter(
-        (f) => f.required && (!customValues[f.id] || customValues[f.id].trim() === ""),
+        (f) => f.required && (!customValues[f.id] || !customValues[f.id].trim()),
       );
       if (missing.length > 0) {
         toast({
@@ -111,7 +113,12 @@ export default function NewRepair() {
         return;
       }
     }
-    createRepair.mutate({ data: values });
+    createRepair.mutate({
+      data: {
+        ...values,
+        reportedAt: new Date(values.reportedAt).toISOString(),
+      },
+    });
   }
 
   return (
@@ -223,6 +230,20 @@ export default function NewRepair() {
                       <FormLabel>報修人</FormLabel>
                       <FormControl>
                         <Input placeholder="例：王小明" {...field} data-testid="input-reported-by" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="reportedAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>報修日期</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-reported-at" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

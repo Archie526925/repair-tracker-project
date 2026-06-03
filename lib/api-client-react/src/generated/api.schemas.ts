@@ -65,6 +65,7 @@ export interface RepairInput {
   description?: string;
   /** @minLength 1 */
   reportedBy: string;
+  reportedAt?: string;
   assignedTo?: string;
   notes?: string;
 }

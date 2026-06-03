@@ -18,6 +18,16 @@ import { cn } from "@/lib/utils";
 
 function AppSidebar() {
   const [location] = useLocation();
+  const userRole = (() => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.role || null;
+    } catch {
+      return null;
+    }
+  })();
 
   const navigation = [
     { name: "儀表板", href: "/", icon: LayoutDashboard },
@@ -25,9 +35,10 @@ function AppSidebar() {
   ];
 
   const settingsNavigation = [
-    { name: "類別管理", href: "/settings/categories", icon: Settings },
-    { name: "自訂欄位", href: "/settings/custom-fields", icon: Settings },
-  ];
+    { name: "類別管理", href: "/settings/categories", icon: Settings, adminOnly: true },
+    { name: "自訂欄位", href: "/settings/custom-fields", icon: Settings, adminOnly: true },
+    { name: "帳號管理", href: "/settings/accounts", icon: Settings, adminOnly: true },
+  ].filter((item) => !item.adminOnly || userRole === "admin");
 
   return (
     <Sidebar variant="inset" className="border-r border-sidebar-border bg-sidebar">

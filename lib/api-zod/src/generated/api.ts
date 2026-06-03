@@ -55,6 +55,7 @@ export const CreateRepairBody = zod.object({
   priority: zod.enum(["low", "medium", "high"]),
   description: zod.string().optional(),
   reportedBy: zod.string().min(1),
+  reportedAt: zod.coerce.date().optional(),
   assignedTo: zod.string().optional(),
   notes: zod.string().optional(),
 });

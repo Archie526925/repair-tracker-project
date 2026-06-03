@@ -69,6 +69,7 @@ router.post("/repairs", async (req, res) => {
         priority: data.priority,
         description: data.description ?? null,
         reportedBy: data.reportedBy,
+        reportedAt: data.reportedAt ?? new Date(),
         assignedTo: data.assignedTo ?? null,
         notes: data.notes ?? null,
       })

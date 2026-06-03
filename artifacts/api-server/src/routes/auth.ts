@@ -31,6 +31,7 @@ router.post("/register", async (req, res): Promise<void> => {
     const newUser = await db.insert(users).values({
       username,
       password: hashedPassword,
+      role: "viewer",
     }).returning();
 
     if (!newUser[0]) {
@@ -74,11 +75,11 @@ router.post("/login", async (req, res): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     res.json({
       token,
-      user: { id: user.id, username: user.username },
+      user: { id: user.id, username: user.username, role: user.role },
     });
   } catch (error) {
     console.error("Login error:", error);

@@ -5,6 +5,7 @@ import statsRouter from "./stats";
 import customFieldsRouter from "./custom-fields";
 import categoriesRouter from "./categories";
 import authRouter from "./auth";
+import adminUsersRouter from "./admin-users";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -19,5 +20,6 @@ router.use(repairsRouter);
 router.use(statsRouter);
 router.use(customFieldsRouter);
 router.use(categoriesRouter);
+router.use(adminUsersRouter);
 
 export default router;

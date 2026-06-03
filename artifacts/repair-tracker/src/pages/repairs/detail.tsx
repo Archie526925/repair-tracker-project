@@ -74,9 +74,13 @@ export default function RepairDetail() {
   const queryClient = useQueryClient();
   const categoryMap = useCategoryMap();
 
+  console.log("[RepairDetail] params:", params, "id:", id, "isNaN:", isNaN(id));
+
   const { data: repair, isLoading, error, isError } = useGetRepair(id, {
     query: { enabled: !!id && !isNaN(id), queryKey: getGetRepairQueryKey(id) },
   });
+
+  console.log("[RepairDetail] isLoading:", isLoading, "isError:", isError, "error:", error, "repair:", repair);
 
   const { data: allCategories } = useListCategories({
     query: { queryKey: getListCategoriesQueryKey() },

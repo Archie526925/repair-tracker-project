@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { format } from "date-fns";
 import {
   useGetRepair,
@@ -67,14 +67,14 @@ type FormData = {
 };
 
 export default function RepairDetail() {
-  const params = useParams();
-  const id = Number(params.id);
+  const [location] = useLocation();
+  const id = Number(location.split("/").filter(Boolean).pop());
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const categoryMap = useCategoryMap();
 
-  console.log("[RepairDetail] params:", params, "id:", id, "isNaN:", isNaN(id));
+  console.log("[RepairDetail] location:", location, "id:", id, "isNaN:", isNaN(id));
 
   const { data: repair, isLoading, error, isError } = useGetRepair(id, {
     query: { enabled: !!id && !isNaN(id), queryKey: getGetRepairQueryKey(id) },

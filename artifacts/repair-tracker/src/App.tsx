@@ -1,4 +1,4 @@
-import { Route, Router as WouterRouter, useLocation } from "wouter";
+import { Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,7 +29,7 @@ function AppRouter() {
         {location.match(/^\/repairs\/\d+$/) && <RepairDetail />}
         {location === "/settings/custom-fields" && <CustomFields />}
         {location === "/settings/categories" && <Categories />}
-        {!["/", "", "/login", "/repairs", "/repairs/new", "/settings/custom-fields", "/settings/categories"].includes(location) && !location.match(/^\/repairs\/\d+$/) && <NotFound />}
+        {!["", "/", "/login", "/repairs", "/repairs/new", "/settings/custom-fields", "/settings/categories"].includes(location) && !location.match(/^\/repairs\/\d+$/) && <NotFound />}
       </AppLayout>
     </AuthGuard>
   );

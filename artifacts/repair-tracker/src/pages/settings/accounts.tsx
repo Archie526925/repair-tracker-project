@@ -9,8 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, ShieldCheck, Users } from "lucide-react";
+import { Shield, ShieldCheck, Users, KeyRound } from "lucide-react";
+import type { ReactNode } from "react";
 
 type UserRow = {
   id: string;
@@ -23,6 +25,8 @@ export default function AccountsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingRoles, setEditingRoles] = useState<Record<string, string>>({});
+  const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   const token = localStorage.getItem("auth_token");
 
@@ -62,6 +66,36 @@ export default function AccountsPage() {
     },
   });
 
+  const updatePassword = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      const res = await fetch(`/api/admin/users/${id}/password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(err.error || `Failed: ${res.status}`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "更新成功", description: "密碼已更新" });
+      setEditingPasswords((prev) => {
+        const next = { ...prev };
+        if (expandedUser) delete next[expandedUser];
+        return next;
+      });
+      if (expandedUser) setEditingPasswords((prev) => ({ ...prev, [expandedUser]: "" }));
+    },
+    onError: (err: Error) => {
+      toast({ title: "更新失敗", description: err.message, variant: "destructive" });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     setEditingRoles((prev) => ({ ...prev, [userId]: newRole }));
   };
@@ -73,6 +107,93 @@ export default function AccountsPage() {
     }
   };
 
+  const handleSavePassword = (userId: string) => {
+    const password = editingPasswords[userId];
+    if (password && password.length >= 4) {
+      updatePassword.mutate({ id: userId, password });
+    } else {
+      toast({ title: "密碼太短", description: "密碼至少需要 4 個字元", variant: "destructive" });
+    }
+  };
+
+  function UserCard({ user }: { user: UserRow }) {
+    const currentRole = editingRoles[user.id] ?? user.role;
+    const hasRoleChanged = currentRole !== user.role;
+    const isExpanded = expandedUser === user.id;
+    const passwordValue = editingPasswords[user.id] ?? "";
+
+    return (
+      <div className="border rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-3">
+            {user.role === "admin" ? (
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
+            ) : (
+              <Shield className="h-5 w-5 text-muted-foreground" />
+            )}
+            <div>
+              <p className="font-medium">{user.username}</p>
+              <p className="text-xs text-muted-foreground">
+                {new Date(user.createdAt).toLocaleDateString("zh-TW")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={currentRole}
+              onValueChange={(v) => handleRoleChange(user.id, v)}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="viewer">檢視者</SelectItem>
+                <SelectItem value="admin">管理員</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasRoleChanged && (
+              <Button
+                size="sm"
+                onClick={() => handleSave(user.id)}
+                disabled={updateRole.isPending}
+              >
+                儲存
+              </Button>
+            )}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setExpandedUser(isExpanded ? null : user.id)}
+              title="修改密碼"
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {isExpanded && (
+          <div className="border-t bg-muted/30 p-3 flex items-center gap-2">
+            <Input
+              type="password"
+              placeholder="輸入新密碼（至少 4 字元）"
+              value={passwordValue}
+              onChange={(e) =>
+                setEditingPasswords((prev) => ({ ...prev, [user.id]: e.target.value }))
+              }
+              className="max-w-xs"
+            />
+            <Button
+              size="sm"
+              onClick={() => handleSavePassword(user.id)}
+              disabled={updatePassword.isPending || passwordValue.length < 4}
+            >
+              更新密碼
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
@@ -80,7 +201,7 @@ export default function AccountsPage() {
           <Users className="h-6 w-6" />
           帳號管理
         </h1>
-        <p className="text-sm text-muted-foreground">管理使用者帳號與權限角色</p>
+        <p className="text-sm text-muted-foreground">管理使用者帳號、密碼與權限角色</p>
       </div>
 
       <Card>
@@ -98,53 +219,9 @@ export default function AccountsPage() {
             <p className="text-sm text-muted-foreground text-center py-8">尚無使用者</p>
           ) : (
             <div className="space-y-3">
-              {users.map((user) => {
-                const currentRole = editingRoles[user.id] ?? user.role;
-                const hasChanged = currentRole !== user.role;
-                return (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      {user.role === "admin" ? (
-                        <ShieldCheck className="h-5 w-5 text-amber-500" />
-                      ) : (
-                        <Shield className="h-5 w-5 text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="font-medium">{user.username}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(user.createdAt).toLocaleDateString("zh-TW")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={currentRole}
-                        onValueChange={(v) => handleRoleChange(user.id, v)}
-                      >
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="viewer">檢視者</SelectItem>
-                          <SelectItem value="admin">管理員</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {hasChanged && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleSave(user.id)}
-                          disabled={updateRole.isPending}
-                        >
-                          儲存
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {users.map((user) => (
+                <UserCard key={user.id} user={user} />
+              ))}
             </div>
           )}
         </CardContent>

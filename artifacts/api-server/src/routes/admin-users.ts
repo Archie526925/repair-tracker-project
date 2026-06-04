@@ -51,4 +51,36 @@ router.patch("/admin/users/:id/role", adminOnly, async (req, res) => {
   }
 });
 
+// Update user password (admin only)
+router.patch("/admin/users/:id/password", adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || typeof password !== "string" || password.length < 4) {
+      res.status(400).json({ error: "Password must be at least 4 characters" });
+      return;
+    }
+
+    const bcrypt = await import("bcryptjs");
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const [updated] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({ id: updated.id, username: updated.username });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

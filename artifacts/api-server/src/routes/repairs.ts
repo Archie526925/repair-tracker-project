@@ -34,7 +34,21 @@ router.get("/repairs", async (req, res) => {
     }
 
     const repairs = await db
-      .select()
+      .select({
+        id: repairsTable.id,
+        title: repairsTable.title,
+        location: repairsTable.location,
+        category: repairsTable.category,
+        priority: repairsTable.priority,
+        status: repairsTable.status,
+        description: repairsTable.description,
+        reportedBy: repairsTable.reportedBy,
+        reportedAt: repairsTable.reportedAt,
+        assignedTo: repairsTable.assignedTo,
+        notes: repairsTable.notes,
+        resolvedAt: repairsTable.resolvedAt,
+        rowNumber: sql<number>`ROW_NUMBER() OVER (ORDER BY ${repairsTable.reportedAt} DESC)`,
+      })
       .from(repairsTable)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(sql`${repairsTable.reportedAt} DESC`);

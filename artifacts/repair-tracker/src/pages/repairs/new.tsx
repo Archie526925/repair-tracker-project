@@ -146,7 +146,7 @@ export default function NewRepair() {
                   <FormItem>
                     <FormLabel>標題</FormLabel>
                     <FormControl>
-                      <Input placeholder="例：3樓男廁洗手台漏水" {...field} data-testid="input-title" />
+                      <Input placeholder="" {...field} data-testid="input-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,7 +215,7 @@ export default function NewRepair() {
                     <FormItem>
                       <FormLabel>地點</FormLabel>
                       <FormControl>
-                        <Input placeholder="例：A棟 301室" {...field} data-testid="input-location" />
+                        <Input placeholder="" {...field} data-testid="input-location" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -229,7 +229,7 @@ export default function NewRepair() {
                     <FormItem>
                       <FormLabel>報修人</FormLabel>
                       <FormControl>
-                        <Input placeholder="例：王小明" {...field} data-testid="input-reported-by" />
+                        <Input placeholder="" {...field} data-testid="input-reported-by" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -43,6 +43,7 @@ export interface Repair {
   resolvedAt?: string | null;
   /** @nullable */
   notes?: string | null;
+  rowNumber: number;
 }
 
 export type RepairInputPriority =

@@ -247,7 +247,7 @@ const filteredRepairs = useMemo(
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => setLocation(`/repairs/${repair.id}`)}
                 >
-                  <TableCell className="font-mono text-muted-foreground text-sm">#{repair.id}</TableCell>
+                  <TableCell className="font-mono text-muted-foreground text-sm">#{repair.rowNumber}</TableCell>
                   <TableCell className="font-medium">{repair.title}</TableCell>
                   <TableCell className="text-sm">
                     <span className="flex items-center gap-1.5">

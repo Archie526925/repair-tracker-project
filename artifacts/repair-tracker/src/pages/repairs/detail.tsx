@@ -251,7 +251,7 @@ export default function RepairDetail() {
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-muted-foreground font-mono text-sm">#{repair.id}</span>
+              <span className="text-muted-foreground font-mono text-sm">#{repair.rowNumber}</span>
               {!editMode ? (
                 <h1 className="text-2xl font-bold tracking-tight">{repair.title}</h1>
               ) : (

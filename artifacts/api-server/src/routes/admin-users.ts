@@ -83,4 +83,32 @@ router.patch("/admin/users/:id/password", adminOnly, async (req, res) => {
   }
 });
 
+// Delete user (admin only)
+router.delete("/admin/users/:id", adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (req.user?.userId === id) {
+      res.status(400).json({ error: "不能刪除自己的帳號" });
+      return;
+    }
+
+    const [deleted] = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({ id: deleted.id, username: deleted.username });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

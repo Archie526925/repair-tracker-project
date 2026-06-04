@@ -11,8 +11,23 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, ShieldCheck, Users, KeyRound } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  Shield,
+  ShieldCheck,
+  Users,
+  KeyRound,
+  Trash2,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type UserRow = {
   id: string;
@@ -27,8 +42,19 @@ export default function AccountsPage() {
   const [editingRoles, setEditingRoles] = useState<Record<string, string>>({});
   const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
 
   const token = localStorage.getItem("auth_token");
+
+  const currentUserId = (() => {
+    try {
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.userId || null;
+    } catch {
+      return null;
+    }
+  })();
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -96,6 +122,29 @@ export default function AccountsPage() {
     },
   });
 
+  const deleteUser = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(err.error || `Failed: ${res.status}`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "刪除成功", description: "使用者已刪除" });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setDeleteTarget(null);
+    },
+    onError: (err: Error) => {
+      toast({ title: "刪除失敗", description: err.message, variant: "destructive" });
+      setDeleteTarget(null);
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     setEditingRoles((prev) => ({ ...prev, [userId]: newRole }));
   };
@@ -121,6 +170,7 @@ export default function AccountsPage() {
     const hasRoleChanged = currentRole !== user.role;
     const isExpanded = expandedUser === user.id;
     const passwordValue = editingPasswords[user.id] ?? "";
+    const isSelf = currentUserId === user.id;
 
     return (
       <div className="border rounded-lg overflow-hidden">
@@ -132,7 +182,12 @@ export default function AccountsPage() {
               <Shield className="h-5 w-5 text-muted-foreground" />
             )}
             <div>
-              <p className="font-medium">{user.username}</p>
+              <p className="font-medium">
+                {user.username}
+                {isSelf && (
+                  <span className="ml-2 text-xs text-muted-foreground">(你)</span>
+                )}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {new Date(user.createdAt).toLocaleDateString("zh-TW")}
               </p>
@@ -168,6 +223,17 @@ export default function AccountsPage() {
             >
               <KeyRound className="h-4 w-4" />
             </Button>
+            {!isSelf && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setDeleteTarget(user)}
+                title="刪除使用者"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         {isExpanded && (
@@ -242,6 +308,32 @@ export default function AccountsPage() {
           </p>
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>確定要刪除此使用者？</AlertDialogTitle>
+            <AlertDialogDescription>
+              刪除後，此使用者的所有資料將被移除，此操作無法復原。
+              {deleteTarget && (
+                <span className="block mt-2 font-medium text-foreground">
+                  使用者：{deleteTarget.username}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteUser.mutate(deleteTarget.id)}
+              disabled={deleteUser.isPending}
+            >
+              刪除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -317,7 +317,7 @@ export default function CustomFieldsSettings() {
 
               {(watchedType === "select" || (editingField && editingField.fieldType === "select")) && (
                 <div className="space-y-2">
-                  <FormLabel>選項</FormLabel>
+                  <label className="text-sm font-medium">選項</label>
                   <div className="flex gap-2">
                     <Input
                       value={optionInput}

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { format } from "date-fns";
+import { useLocation, Link } from "wouter";
 import {
   useGetRepair,
   useUpdateRepair,
@@ -28,7 +27,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useCategoryMap } from "@/hooks/use-category-map";
+import { formatDateTime } from "@/lib/utils";
 import {
   STATUS_LABELS,
   PRIORITY_LABELS,
@@ -48,9 +50,6 @@ import {
   Pencil,
   X,
 } from "lucide-react";
-import { Link } from "wouter";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCategoryMap } from "@/hooks/use-category-map";
 
 type CustomValueRow = { id: number; repairId: number; fieldId: number; value: string };
 
@@ -74,13 +73,9 @@ export default function RepairDetail() {
   const queryClient = useQueryClient();
   const categoryMap = useCategoryMap();
 
-  console.log("[RepairDetail] location:", location, "id:", id, "isNaN:", isNaN(id));
-
   const { data: repair, isLoading, error, isError } = useGetRepair(id, {
     query: { enabled: !!id && !isNaN(id), queryKey: getGetRepairQueryKey(id) },
   });
-
-  console.log("[RepairDetail] isLoading:", isLoading, "isError:", isError, "error:", error, "repair:", repair);
 
   const { data: allCategories } = useListCategories({
     query: { queryKey: getListCategoriesQueryKey() },
@@ -251,7 +246,6 @@ export default function RepairDetail() {
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-muted-foreground font-mono text-sm">#{repair.rowNumber}</span>
               {!editMode ? (
                 <h1 className="text-2xl font-bold tracking-tight">{repair.title}</h1>
               ) : (
@@ -270,7 +264,7 @@ export default function RepairDetail() {
             </div>
             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
               <Calendar className="h-3 w-3" />
-              {format(new Date(repair.reportedAt), "yyyy年MM月dd日 HH:mm")} 報修
+              {formatDateTime(repair.reportedAt)} 報修
             </p>
           </div>
         </div>
@@ -592,7 +586,7 @@ export default function RepairDetail() {
                     <CheckCircle className="h-4 w-4" /> 解決時間
                   </label>
                   <div className="font-medium text-sm">
-                    {format(new Date(repair.resolvedAt), "yyyy-MM-dd HH:mm")}
+                    {formatDateTime(repair.resolvedAt)}
                   </div>
                 </div>
               )}

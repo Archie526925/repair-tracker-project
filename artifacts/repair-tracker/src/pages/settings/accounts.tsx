@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/lib/utils";
 import {
   Shield,
   ShieldCheck,
@@ -189,7 +190,7 @@ export default function AccountsPage() {
                 )}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(user.createdAt).toLocaleDateString("zh-TW")}
+                {formatDate(user.createdAt)}
               </p>
             </div>
           </div>

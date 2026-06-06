@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,7 +37,6 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PRIORITY_LABELS } from "@/lib/constants";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
 
 const formSchema = z.object({
   title: z.string().min(1, "請輸入報修標題"),
@@ -116,7 +115,7 @@ export default function NewRepair() {
     createRepair.mutate({
       data: {
         ...values,
-        reportedAt: new Date(values.reportedAt).toISOString(),
+        reportedAt: new Date().toISOString(),
       },
     });
   }
@@ -160,26 +159,20 @@ export default function NewRepair() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>類別</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
+                      <FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger data-testid="select-category">
                             <SelectValue placeholder="選擇類別" />
                           </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(Array.isArray(categories) ? categories : []).map((cat) => (
-                            <SelectItem key={cat.slug} value={cat.slug}>
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className="inline-block h-3 w-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: cat.color }}
-                                />
+                          <SelectContent>
+                            {categories?.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.slug}>
                                 {cat.label}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -191,18 +184,20 @@ export default function NewRepair() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>優先級</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                      <FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <SelectTrigger data-testid="select-priority">
                             <SelectValue placeholder="選擇優先級" />
                           </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(PRIORITY_LABELS).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>{v}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectContent>
+                            {Object.entries(PRIORITY_LABELS).map(([key, label]) => (
+                              <SelectItem key={key} value={key}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -287,10 +282,10 @@ export default function NewRepair() {
                           <Select
                             value={customValues[cf.id] ?? ""}
                             onValueChange={(v) =>
-                              setCustomValues((prev) => ({ ...prev, [cf.id]: v }))
-                            }
+                              setCustomValues((prev) => ({ ...prev, [cf.id]: v }))}
+                            data-testid={`custom-select-${cf.id}`}
                           >
-                            <SelectTrigger data-testid={`custom-select-${cf.id}`}>
+                            <SelectTrigger>
                               <SelectValue placeholder={`選擇${cf.name}`} />
                             </SelectTrigger>
                             <SelectContent>
@@ -304,8 +299,7 @@ export default function NewRepair() {
                             type={cf.fieldType === "number" ? "number" : cf.fieldType === "date" ? "date" : "text"}
                             value={customValues[cf.id] ?? ""}
                             onChange={(e) =>
-                              setCustomValues((prev) => ({ ...prev, [cf.id]: e.target.value }))
-                            }
+                              setCustomValues((prev) => ({ ...prev, [cf.id]: e.target.value }))}
                             data-testid={`custom-input-${cf.id}`}
                           />
                         )}

@@ -28,11 +28,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, formatDate } from "@/lib/utils";
+import { useCategoryMap } from "@/hooks/use-category-map";
 import { STATUS_LABELS, PRIORITY_LABELS, STATUS_COLORS, PRIORITY_COLORS } from "@/lib/constants";
 import { Plus, Search, Filter, ChevronLeft, ChevronRight, History } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { useCategoryMap } from "@/hooks/use-category-map";
 
 function toMonthStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -72,9 +72,9 @@ export default function RepairsList() {
     query: { queryKey: getListRepairsQueryKey(params) },
   });
 
-const filteredRepairs = useMemo(
-  () =>
-    (Array.isArray(repairs) ? repairs : []).filter(
+  const filteredRepairs = useMemo(
+    () =>
+      (Array.isArray(repairs) ? repairs : []).filter(
         (repair) =>
           !searchQuery ||
           repair.title.includes(searchQuery) ||
@@ -91,14 +91,12 @@ const filteredRepairs = useMemo(
           <h1 className="text-3xl font-bold tracking-tight">報修紀錄</h1>
           <p className="text-muted-foreground mt-1">管理與追蹤所有設施報修</p>
         </div>
-        <Link
-          href="/repairs/new"
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-          data-testid="btn-new-repair"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          新增報修
-        </Link>
+        <Button asChild data-testid="btn-new-repair">
+          <Link href="/repairs/new">
+            <Plus className="mr-2 h-4 w-4" />
+            新增報修
+          </Link>
+        </Button>
       </div>
 
       {/* Month navigation */}
@@ -220,7 +218,7 @@ const filteredRepairs = useMemo(
               <TableHead>地點</TableHead>
               <TableHead>狀態</TableHead>
               <TableHead>優先級</TableHead>
-              <TableHead>報修時間</TableHead>
+              <TableHead>報修日期</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -270,7 +268,7 @@ const filteredRepairs = useMemo(
                     {PRIORITY_LABELS[repair.priority]}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(repair.reportedAt), "yyyy-MM-dd HH:mm")}
+                    {formatDate(repair.reportedAt)}
                   </TableCell>
                 </TableRow>
               ))

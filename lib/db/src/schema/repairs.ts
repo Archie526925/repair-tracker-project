@@ -1,6 +1,7 @@
-import { pgTable, serial, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { groups } from "./groups";
 
 export const statusEnum = pgEnum("status", [
   "pending",
@@ -23,6 +24,7 @@ export const repairsTable = pgTable("repairs", {
   reportedAt: timestamp("reported_at").notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at"),
   notes: text("notes"),
+  groupId: integer("group_id").references(() => groups.id),
 });
 
 export const insertRepairSchema = createInsertSchema(repairsTable).omit({

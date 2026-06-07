@@ -124,6 +124,7 @@ export interface MonthlyStats {
   total: number;
   byStatus: MonthlyStatsByStatus;
   byCategory: MonthlyStatsByCategory;
+  byLocation: MonthlyStatsByCategory;
   byPriority: MonthlyStatsByPriority;
   /** @nullable */
   avgResolutionDays?: number | null;

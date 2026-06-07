@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { eq, and, gte, lt, sql } from "drizzle-orm";
 import { db, repairsTable, repairCustomValuesTable } from "@workspace/db";
+import { AuthRequest } from "../middlewares/auth";
 import {
   CreateRepairBody,
   UpdateRepairBody,
@@ -14,6 +15,7 @@ const router = Router();
 
 router.get("/repairs", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const parsed = ListRepairsQueryParams.safeParse(req.query);
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid query params" });
@@ -21,6 +23,11 @@ router.get("/repairs", async (req, res) => {
     const { status, category, priority, month } = parsed.data;
 
     const conditions = [];
+
+    // Group isolation: only see repairs in own group (or all if no group)
+    if (authReq.user?.groupId != null) {
+      conditions.push(eq(repairsTable.groupId, authReq.user.groupId));
+    }
 
     if (status) conditions.push(eq(repairsTable.status, status));
     if (category) conditions.push(eq(repairsTable.category, category));
@@ -68,6 +75,7 @@ router.get("/repairs", async (req, res) => {
 
 router.post("/repairs", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const parsed = CreateRepairBody.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.message });
@@ -86,6 +94,7 @@ router.post("/repairs", async (req, res) => {
         reportedAt: data.reportedAt ?? new Date(),
         assignedTo: data.assignedTo ?? null,
         notes: data.notes ?? null,
+        groupId: authReq.user?.groupId ?? null,
       })
       .returning();
 
@@ -102,9 +111,15 @@ router.post("/repairs", async (req, res) => {
 
 router.get("/repairs/:id", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const parsed = GetRepairParams.safeParse({ id: Number(req.params.id) });
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid id" });
+    }
+
+    const conditions = [eq(repairsTable.id, parsed.data.id)];
+    if (authReq.user?.groupId != null) {
+      conditions.push(eq(repairsTable.groupId, authReq.user.groupId));
     }
 
     const [repair] = await db
@@ -124,7 +139,7 @@ router.get("/repairs/:id", async (req, res) => {
         rowNumber: sql<number>`ROW_NUMBER() OVER (ORDER BY ${repairsTable.reportedAt} DESC)`,
       })
       .from(repairsTable)
-      .where(eq(repairsTable.id, parsed.data.id));
+      .where(and(...conditions));
 
     if (!repair) {
       return res.status(404).json({ error: "Repair not found" });
@@ -143,6 +158,7 @@ router.get("/repairs/:id", async (req, res) => {
 
 router.patch("/repairs/:id", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const paramsParsed = UpdateRepairParams.safeParse({
       id: Number(req.params.id),
     });
@@ -173,7 +189,7 @@ router.patch("/repairs/:id", async (req, res) => {
       const [existing] = await db
         .select()
         .from(repairsTable)
-        .where(eq(repairsTable.id, paramsParsed.data.id));
+        .where(and(eq(repairsTable.id, paramsParsed.data.id), ...(authReq.user?.groupId != null ? [eq(repairsTable.groupId, authReq.user.groupId)] : [])));
       if (!existing) return res.status(404).json({ error: "Repair not found" });
       return res.json({
         ...existing,
@@ -184,10 +200,15 @@ router.patch("/repairs/:id", async (req, res) => {
       });
     }
 
+    const patchConditions = [eq(repairsTable.id, paramsParsed.data.id)];
+    if (authReq.user?.groupId != null) {
+      patchConditions.push(eq(repairsTable.groupId, authReq.user.groupId));
+    }
+
     const [repair] = await db
       .update(repairsTable)
       .set(updates)
-      .where(eq(repairsTable.id, paramsParsed.data.id))
+      .where(and(...patchConditions))
       .returning();
 
     if (!repair) {
@@ -224,14 +245,20 @@ router.get("/repairs/:id/custom-values", async (req, res) => {
 
 router.delete("/repairs/:id", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const parsed = DeleteRepairParams.safeParse({ id: Number(req.params.id) });
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid id" });
     }
 
+    const deleteConditions = [eq(repairsTable.id, parsed.data.id)];
+    if (authReq.user?.groupId != null) {
+      deleteConditions.push(eq(repairsTable.groupId, authReq.user.groupId));
+    }
+
     const result = await db
       .delete(repairsTable)
-      .where(eq(repairsTable.id, parsed.data.id))
+      .where(and(...deleteConditions))
       .returning();
 
     if (result.length === 0) {

@@ -75,11 +75,11 @@ router.post("/login", async (req, res): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id, role: user.role, groupId: user.groupId }, JWT_SECRET, { expiresIn: "7d" });
 
     res.json({
       token,
-      user: { id: user.id, username: user.username, role: user.role },
+      user: { id: user.id, username: user.username, role: user.role, groupId: user.groupId },
     });
   } catch (error) {
     console.error("Login error:", error);

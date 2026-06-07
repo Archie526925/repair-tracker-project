@@ -13,6 +13,7 @@ router.get("/admin/users", adminOnly, async (req, res) => {
       id: users.id,
       username: users.username,
       role: users.role,
+      groupId: users.groupId,
       createdAt: users.createdAt,
     }).from(users);
     res.json(allUsers);
@@ -77,6 +78,35 @@ router.patch("/admin/users/:id/password", adminOnly, async (req, res) => {
     }
 
     res.json({ id: updated.id, username: updated.username });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Update user group (admin only)
+router.patch("/admin/users/:id/group", adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { groupId } = req.body;
+
+    if (groupId !== null && (typeof groupId !== "number" || groupId < 1)) {
+      res.status(400).json({ error: "Invalid groupId" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set({ groupId: groupId ?? null })
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({ id: updated.id, username: updated.username, groupId: updated.groupId });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

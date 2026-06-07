@@ -17,6 +17,7 @@ export * from "./schema/repairs";
 export * from "./schema/custom-fields";
 export * from "./schema/categories";
 export * from "./schema/users";
+export * from "./schema/groups";
 
 export async function initializeDatabase() {
   await pool.query(`
@@ -38,6 +39,23 @@ export async function initializeDatabase() {
       WHEN duplicate_object THEN NULL;
     END $$;
 
+    CREATE TABLE IF NOT EXISTS groups (
+      id serial PRIMARY KEY,
+      name text NOT NULL UNIQUE,
+      description text,
+      created_at timestamp NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      username text NOT NULL UNIQUE,
+      password text NOT NULL,
+      role text NOT NULL DEFAULT 'viewer',
+      group_id integer REFERENCES groups(id),
+      created_at timestamp NOT NULL DEFAULT now(),
+      updated_at timestamp NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS repairs (
       id serial PRIMARY KEY,
       title text NOT NULL,
@@ -50,7 +68,8 @@ export async function initializeDatabase() {
       assigned_to text,
       reported_at timestamp NOT NULL DEFAULT now(),
       resolved_at timestamp,
-      notes text
+      notes text,
+      group_id integer REFERENCES groups(id)
     );
 
     CREATE TABLE IF NOT EXISTS categories (

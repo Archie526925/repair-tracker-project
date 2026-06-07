@@ -2,11 +2,13 @@ import { Router } from "express";
 import { and, gte, lt, eq } from "drizzle-orm";
 import { db, repairsTable, categoriesTable } from "@workspace/db";
 import { GetMonthlyStatsQueryParams } from "@workspace/api-zod";
+import { AuthRequest } from "../middlewares/auth";
 
 const router = Router();
 
 router.get("/stats/monthly", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const parsed = GetMonthlyStatsQueryParams.safeParse(req.query);
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid query params" });
@@ -19,14 +21,23 @@ router.get("/stats/monthly", async (req, res) => {
     const start = new Date(year, mon - 1, 1);
     const end = new Date(year, mon, 1);
 
+    const conditions = [
+      gte(repairsTable.reportedAt, start),
+      lt(repairsTable.reportedAt, end),
+    ];
+    if (authReq.user?.groupId != null) {
+      conditions.push(eq(repairsTable.groupId, authReq.user.groupId));
+    }
+
     const repairs = await db
       .select()
       .from(repairsTable)
-      .where(and(gte(repairsTable.reportedAt, start), lt(repairsTable.reportedAt, end)));
+      .where(and(...conditions));
 
     const byStatus: Record<string, number> = { pending: 0, in_progress: 0, completed: 0 };
     const byCategory: Record<string, number> = {};
     const byPriority: Record<string, number> = { low: 0, medium: 0, high: 0 };
+    const byLocation: Record<string, number> = {};
 
     let totalResolutionMs = 0;
     let resolvedCount = 0;
@@ -35,6 +46,7 @@ router.get("/stats/monthly", async (req, res) => {
       byStatus[r.status]++;
       byCategory[r.category] = (byCategory[r.category] ?? 0) + 1;
       byPriority[r.priority]++;
+      byLocation[r.location] = (byLocation[r.location] ?? 0) + 1;
 
       if (r.status === "completed" && r.resolvedAt) {
         totalResolutionMs += r.resolvedAt.getTime() - r.reportedAt.getTime();
@@ -52,6 +64,7 @@ router.get("/stats/monthly", async (req, res) => {
       total: repairs.length,
       byStatus,
       byCategory,
+      byLocation,
       byPriority,
       avgResolutionDays,
     });
@@ -63,11 +76,14 @@ router.get("/stats/monthly", async (req, res) => {
 
 router.get("/stats/summary", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    const all = await db.select().from(repairsTable);
+    const all = authReq.user?.groupId != null
+      ? await db.select().from(repairsTable).where(eq(repairsTable.groupId, authReq.user.groupId))
+      : await db.select().from(repairsTable);
 
     let pending = 0;
     let inProgress = 0;
@@ -101,6 +117,7 @@ router.get("/stats/summary", async (req, res) => {
 
 router.get("/stats/trend", async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const trend = [];
     const now = new Date();
 
@@ -109,10 +126,18 @@ router.get("/stats/trend", async (req, res) => {
       const start = new Date(d.getFullYear(), d.getMonth(), 1);
       const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
 
+      const conditions = [
+        gte(repairsTable.reportedAt, start),
+        lt(repairsTable.reportedAt, end),
+      ];
+      if (authReq.user?.groupId != null) {
+        conditions.push(eq(repairsTable.groupId, authReq.user.groupId));
+      }
+
       const repairs = await db
         .select()
         .from(repairsTable)
-        .where(and(gte(repairsTable.reportedAt, start), lt(repairsTable.reportedAt, end)));
+        .where(and(...conditions));
 
       const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const completed = repairs.filter((r) => r.status === "completed").length;

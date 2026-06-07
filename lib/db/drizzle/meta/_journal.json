@@ -8,6 +8,13 @@
       "when": 1780504387177,
       "tag": "0000_boring_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780805156561,
+      "tag": "0001_sticky_wallow",
+      "breakpoints": true
     }
   ]
 }

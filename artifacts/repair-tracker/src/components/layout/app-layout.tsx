@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Wrench, Menu, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Wrench, Menu, Settings, LogOut, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -37,6 +37,7 @@ function AppSidebar() {
   const settingsNavigation = [
     { name: "類別管理", href: "/settings/categories", icon: Settings, adminOnly: true },
     { name: "自訂欄位", href: "/settings/custom-fields", icon: Settings, adminOnly: true },
+    { name: "群組管理", href: "/settings/groups", icon: Building2, adminOnly: true },
     { name: "帳號管理", href: "/settings/accounts", icon: Settings, adminOnly: true },
   ].filter((item) => !item.adminOnly || userRole === "admin");
 

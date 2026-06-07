@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatDate } from "@/lib/utils";
 import { useCategoryMap } from "@/hooks/use-category-map";
 import { STATUS_LABELS, PRIORITY_LABELS, STATUS_COLORS, PRIORITY_COLORS } from "@/lib/constants";
-import { Plus, Search, Filter, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, History } from "lucide-react";
 
 function toMonthStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -157,7 +157,7 @@ export default function RepairsList() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-4 rounded-lg border shadow-sm">
+      <div className="flex flex-col gap-3 bg-card p-3 sm:p-4 rounded-lg border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -167,8 +167,7 @@ export default function RepairsList() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
-          <Filter className="h-4 w-4 text-muted-foreground self-center hidden sm:block" />
+        <div className="flex gap-2 w-full flex-wrap">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
             <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="狀態" />

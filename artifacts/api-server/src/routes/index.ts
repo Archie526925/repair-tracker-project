@@ -6,6 +6,7 @@ import customFieldsRouter from "./custom-fields";
 import categoriesRouter from "./categories";
 import authRouter from "./auth";
 import adminUsersRouter from "./admin-users";
+import groupsRouter from "./groups";
 import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -21,5 +22,6 @@ router.use(statsRouter);
 router.use(customFieldsRouter);
 router.use(categoriesRouter);
 router.use(adminUsersRouter);
+router.use(groupsRouter);
 
 export default router;

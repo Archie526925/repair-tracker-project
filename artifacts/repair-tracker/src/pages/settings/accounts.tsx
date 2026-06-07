@@ -18,6 +18,7 @@ import {
   Users,
   KeyRound,
   Trash2,
+  Building2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -34,7 +35,14 @@ type UserRow = {
   id: string;
   username: string;
   role: string;
+  groupId: number | null;
+  groupName: string | null;
   createdAt: string;
+};
+
+type GroupOption = {
+  id: number;
+  name: string;
 };
 
 export default function AccountsPage() {
@@ -65,6 +73,17 @@ export default function AccountsPage() {
       });
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
       return res.json() as Promise<UserRow[]>;
+    },
+  });
+
+  const { data: groups } = useQuery({
+    queryKey: ["groups"],
+    queryFn: async () => {
+      const res = await fetch("/api/groups", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Failed: ${res.status}`);
+      return res.json() as Promise<GroupOption[]>;
     },
   });
 
@@ -123,6 +142,31 @@ export default function AccountsPage() {
     },
   });
 
+  const updateGroup = useMutation({
+    mutationFn: async ({ id, groupId }: { id: string; groupId: number | null }) => {
+      const res = await fetch(`/api/admin/users/${id}/group`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ groupId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(err.error || `Failed: ${res.status}`);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "更新成功", description: "使用者群組已更新" });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "更新失敗", description: err.message, variant: "destructive" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/admin/users/${id}`, {
@@ -164,6 +208,11 @@ export default function AccountsPage() {
     } else {
       toast({ title: "密碼太短", description: "密碼至少需要 4 個字元", variant: "destructive" });
     }
+  };
+
+  const handleGroupChange = (userId: string, value: string) => {
+    const groupId = value === "__none__" ? null : Number(value);
+    updateGroup.mutate({ id: userId, groupId });
   };
 
   function UserCard({ user }: { user: UserRow }) {
@@ -236,6 +285,27 @@ export default function AccountsPage() {
               </Button>
             )}
           </div>
+        </div>
+        {/* Group row */}
+        <div className="border-t bg-muted/20 px-3 py-2 flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium w-12">群組</span>
+          <Select
+            value={user.groupId != null ? String(user.groupId) : "__none__"}
+            onValueChange={(v) => handleGroupChange(user.id, v)}
+          >
+            <SelectTrigger className="w-[160px] h-8 text-sm">
+              <SelectValue placeholder="未設定" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">未設定</SelectItem>
+              {groups?.map((g) => (
+                <SelectItem key={g.id} value={String(g.id)}>
+                  {g.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {isExpanded && (
           <div className="border-t bg-muted/30 p-3 flex items-center gap-2">

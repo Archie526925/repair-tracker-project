@@ -10,6 +10,7 @@ import RepairDetail from "@/pages/repairs/detail";
 import CustomFields from "@/pages/settings/custom-fields";
 import Categories from "@/pages/settings/categories";
 import AccountsPage from "@/pages/settings/accounts";
+import GroupsPage from "@/pages/settings/groups";
 import LoginPage from "@/pages/auth/login";
 import { AppLayout } from "@/components/layout/app-layout";
 import { AuthGuard } from "@/components/layout/auth-guard";
@@ -44,10 +45,12 @@ function AppRouter() {
         {location === "/settings/custom-fields" && isAdmin && <CustomFields />}
         {location === "/settings/categories" && isAdmin && <Categories />}
         {location === "/settings/accounts" && isAdmin && <AccountsPage />}
+        {location === "/settings/groups" && isAdmin && <GroupsPage />}
         {location === "/settings/custom-fields" && !isAdmin && <NotFound />}
         {location === "/settings/categories" && !isAdmin && <NotFound />}
         {location === "/settings/accounts" && !isAdmin && <NotFound />}
-        {!["", "/", "/login", "/repairs", "/repairs/new", "/settings/custom-fields", "/settings/categories", "/settings/accounts"].includes(location) && !location.match(/^\/repairs\/\d+$/) && <NotFound />}
+        {location === "/settings/groups" && !isAdmin && <NotFound />}
+        {![ "", "/", "/login", "/repairs", "/repairs/new", "/settings/custom-fields", "/settings/categories", "/settings/groups", "/settings/accounts" ].includes(location) && !location.match(/^\/repairs\/\d+$/) && <NotFound />}
       </AppLayout>
     </AuthGuard>
   );

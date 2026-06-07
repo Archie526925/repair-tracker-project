@@ -143,6 +143,7 @@ export const GetMonthlyStatsResponse = zod.object({
     completed: zod.number(),
   }),
   byCategory: zod.record(zod.string(), zod.number()),
+  byLocation: zod.record(zod.string(), zod.number()),
   byPriority: zod.object({
     low: zod.number(),
     medium: zod.number(),

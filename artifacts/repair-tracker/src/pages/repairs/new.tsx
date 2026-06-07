@@ -115,7 +115,7 @@ export default function NewRepair() {
     createRepair.mutate({
       data: {
         ...values,
-        reportedAt: new Date().toISOString(),
+        reportedAt: values.reportedAt ? new Date(values.reportedAt + "T00:00:00+08:00").toISOString() : new Date().toISOString(),
       },
     });
   }

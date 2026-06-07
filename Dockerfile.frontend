@@ -1,0 +1,53 @@
+# ---- Stage 1: Install dependencies ----
+FROM node:20-alpine AS deps
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace root config files first (for better cache)
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
+COPY .npmrc ./
+
+# Copy all package.json files for dependency resolution
+COPY artifacts/repair-tracker/package.json artifacts/repair-tracker/package.json
+COPY artifacts/api-server/package.json artifacts/api-server/package.json
+COPY lib/db/package.json lib/db/package.json
+COPY lib/api-zod/package.json lib/api-zod/package.json
+COPY lib/api-client-react/package.json lib/api-client-react/package.json
+COPY lib/api-spec/package.json lib/api-spec/package.json
+
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
+
+# ---- Stage 2: Build ----
+FROM deps AS build
+
+# Copy all source code (frontend may import from shared libs)
+COPY lib/ lib/
+COPY artifacts/ artifacts/
+
+# Build shared libs that the frontend depends on (in dependency order)
+RUN pnpm --filter @workspace/api-spec build
+RUN pnpm --filter @workspace/api-zod build
+RUN pnpm --filter @workspace/db build
+RUN pnpm --filter @workspace/api-client-react build
+
+# Build the frontend
+RUN pnpm --filter @workspace/repair-tracker build
+
+# ---- Stage 3: Serve with nginx ----
+FROM nginx:alpine AS serve
+
+# Remove default nginx config and static files
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy built static assets
+COPY --from=build /app/artifacts/repair-tracker/dist/public/ /usr/share/nginx/html/
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

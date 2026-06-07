@@ -1,0 +1,47 @@
+# Dependencies (installed inside Docker)
+node_modules/
+**/node_modules/
+
+# Build outputs (rebuilt inside Docker)
+dist/
+**/dist/
+
+# Environment files (passed via docker-compose env vars)
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker files (avoid recursive context)
+docker-compose.yml
+Dockerfile.api
+Dockerfile.frontend
+.dockerignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test and coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+.cache/

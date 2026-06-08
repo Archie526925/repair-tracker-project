@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import { db, groups } from "@workspace/db";
+import { db, groups, repairsTable, users } from "@workspace/db";
 import { adminOnly, AuthRequest } from "../middlewares/auth";
 
 const router = Router();
@@ -67,8 +67,16 @@ router.delete("/groups/:id", adminOnly, async (req, res) => {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
+    // 1. 先刪該群組的所有報修紀錄
+    await db.delete(repairsTable).where(eq(repairsTable.groupId, id));
+
+    // 2. 把該群組的使用者的 group_id 設為 null
+    await db.update(users).set({ groupId: null }).where(eq(users.groupId, id));
+
+    // 3. 刪除群組
     const result = await db.delete(groups).where(eq(groups.id, id)).returning();
     if (result.length === 0) return res.status(404).json({ error: "Group not found" });
+
     return res.status(204).send();
   } catch (err) {
     req.log.error(err);

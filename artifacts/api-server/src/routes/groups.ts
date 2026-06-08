@@ -77,7 +77,7 @@ router.delete("/groups/:id", adminOnly, async (req, res) => {
     const result = await db.delete(groups).where(eq(groups.id, id)).returning();
     if (result.length === 0) return res.status(404).json({ error: "Group not found" });
 
-    return res.status(204).send();
+    return res.status(200).json({ success: true });
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });

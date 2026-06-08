@@ -110,7 +110,8 @@ export default function GroupsPage() {
         const err = await res.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(err.error || `Failed: ${res.status}`);
       }
-      return res.json();
+      // 200 with body or 204 no content — both mean success
+      return;
     },
     onSuccess: () => {
       toast({ title: "刪除成功", description: "群組已刪除" });

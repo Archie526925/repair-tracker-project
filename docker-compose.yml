@@ -1,19 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: repair_tracker
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: repair_tracker
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U repair_tracker -d repair_tracker"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api-server:
     build:
       context: .
@@ -22,11 +7,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://repair_tracker:${POSTGRES_PASSWORD:-changeme}@postgres:5432/repair_tracker
+      DATABASE_URL: /app/data/repair_tracker.db
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
-    depends_on:
-      postgres:
-        condition: service_healthy
+    volumes:
+      - dbdata:/app/data
 
   frontend:
     build:
@@ -39,4 +23,4 @@ services:
       - api-server
 
 volumes:
-  pgdata:
+  dbdata:

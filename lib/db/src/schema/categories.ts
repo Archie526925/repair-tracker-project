@@ -1,7 +1,7 @@
-import { pgTable, serial, text, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
-export const categoriesTable = pgTable("categories", {
-  id: serial("id").primaryKey(),
+export const categoriesTable = sqliteTable("categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   slug: text("slug").notNull().unique(),
   label: text("label").notNull(),
   color: text("color").notNull().default("#6b7280"),

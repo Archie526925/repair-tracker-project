@@ -39,19 +39,7 @@ pnpm --version
    git --version
    ```
 
-### 4. PostgreSQL
-
-1. 到 https://www.postgresql.org/download/windows/ 下載 v16
-2. 執行安裝程式：
-   - 安裝路徑：預設即可
-   - **密碼**：設定 superuser (postgres) 的密碼，**請記住這個密碼！**（例如：`MyPgPass123`）
-   - Port：5432（預設）
-   - Locale：預設
-3. 安裝完確認服務有在跑：
-   - 按 `Win + R`，輸入 `services.msc`
-   - 找 `postgresql-x64-16`，狀態應該是「執行中」
-
-### 5. NSSM（把 Node.js 註冊成 Windows 服務，開機自啟）
+### 4. NSSM（把 Node.js 註冊成 Windows 服務，開機自啟）
 
 1. 到 https://nssm.cc/download 下載
 2. 解壓縮，把 `nssm.exe` 複製到 `C:\Windows\`（或加到 PATH 環境變數）
@@ -79,65 +67,33 @@ pnpm install
 
 ---
 
-## 第四步：建立資料庫
-
-### 方法 A：用 pgAdmin（圖形介面）
-
-1. 從開始選單開啟 pgAdmin 4
-2. 左邊展開 Servers → PostgreSQL 16
-3. 輸入安裝時設的密碼
-4. 右鍵 Databases → Create → Database
-5. 名稱輸入 `repair_tracker`，按 Save
-
-### 方法 B：用 psql（命令列）
-
-```powershell
-# 用 postgres 帳號登入
-"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "CREATE DATABASE repair_tracker;"
-```
-會提示輸入密碼，輸入安裝時設的密碼。
-
----
-
-## 第五步：設定環境變數
+## 第四步：設定環境變數
 
 在 `C:\repair-tracker-project\artifacts\api-server\` 建立 `.env` 檔案：
 
 ```
 PORT=3000
-DATABASE_URL=postgresql://postgres:你的PG密碼@localhost:5432/repair_tracker
+DATABASE_URL=./repair_tracker.db
 JWT_SECRET=隨便打一串很長的亂數英文數字
 TZ=Asia/Taipei
 ```
 
-⚠️ **JWT_SECURET 務必改成自己的隨機字串**，不要用預設值！
-
-例如：
-```
-PORT=3000
-DATABASE_URL=postgresql://postgres:MyPgPass123@localhost:5432/repair_tracker
-JWT_SECRET=a8f3k2m9x4p7q1w6r5t0y8u2i4o6
-TZ=Asia/Taipei
-```
+⚠️ **JWT_SECRET 務必改成自己的隨機字串**，不要用預設值！
 
 ---
 
-## 第六步：初始化資料庫（建表）
+## 第五步：初始化資料庫（建表）
 
 ```powershell
 cd C:\repair-tracker-project
 
-# 方法 1：用 drizzle-kit
-set DATABASE_URL=postgresql://postgres:你的PG密碼@localhost:5432/repair_tracker
+# 用 drizzle-kit 建表
 pnpm --filter @workspace/db push
-
-# 方法 2：如果 drizzle-kit 有問題，API server 啟動時會自動建表
-# （跳過此步，直接啟動 API server 也行）
 ```
 
 ---
 
-## 第七步：Build
+## 第六步：Build
 
 ```powershell
 cd C:\repair-tracker-project
@@ -157,7 +113,7 @@ pnpm --filter @workspace/repair-tracker build
 
 ---
 
-## 第八步：註冊 Windows 服務（開機自啟）
+## 第七步：註冊 Windows 服務（開機自啟）
 
 ### API Server 服務
 
@@ -174,7 +130,7 @@ nssm install RepairAPI "C:\Program Files\nodejs\node.exe"
 
 切到 **Environment** 頁面，加入：
 ```
-DATABASE_URL=postgresql://postgres:你的PG密碼@localhost:5432/repair_tracker
+DATABASE_URL=./repair_tracker.db
 JWT_SECRET=你的JWT密碼
 PORT=3000
 NODE_ENV=production
@@ -190,9 +146,7 @@ nssm start RepairAPI
 
 前端是靜態檔（build 好放在 dist/public/），需要一個簡單的 HTTP server。
 
-最簡單的方式：讓 API server 同時 serve 前端靜態檔。
-
-或者用 NSSM 再註冊一個 Vite preview 服務：
+用 NSSM 註冊一個 Vite preview 服務：
 
 ```powershell
 nssm install RepairFrontend "C:\Program Files\nodejs\node.exe"
@@ -213,7 +167,7 @@ nssm start RepairFrontend
 
 ---
 
-## 第九步：確認可以連
+## 第八步：確認可以連
 
 在本機瀏覽器開：
 ```
@@ -278,15 +232,6 @@ nssm status RepairAPI
 
 # 看錯誤 log
 # 到 Windows 事件檢視器 → Windows 記錄 → 應用程式
-```
-
-### 資料庫連不上
-```powershell
-# 確認 PostgreSQL 服務有在跑
-# 按 Win+R → services.msc → 找 postgresql-x64-16
-
-# 測試連線
-"C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d repair_tracker -c "SELECT 1;"
 ```
 
 ### 別人連不到

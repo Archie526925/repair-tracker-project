@@ -1,24 +1,17 @@
-import { pgTable, serial, text, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { repairsTable } from "./repairs";
 
-export const fieldTypeEnum = pgEnum("field_type", [
-  "text",
-  "number",
-  "select",
-  "date",
-]);
-
-export const customFieldDefinitionsTable = pgTable("custom_field_definitions", {
-  id: serial("id").primaryKey(),
+export const customFieldDefinitionsTable = sqliteTable("custom_field_definitions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  fieldType: fieldTypeEnum("field_type").notNull(),
-  options: text("options").array(),
-  required: boolean("required").notNull().default(false),
+  fieldType: text("field_type").notNull(),
+  options: text("options"),
+  required: integer("required", { mode: "boolean" }).notNull().default(0),
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const repairCustomValuesTable = pgTable("repair_custom_values", {
-  id: serial("id").primaryKey(),
+export const repairCustomValuesTable = sqliteTable("repair_custom_values", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   repairId: integer("repair_id")
     .notNull()
     .references(() => repairsTable.id, { onDelete: "cascade" }),

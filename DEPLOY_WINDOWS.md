@@ -44,6 +44,8 @@ pnpm --version
 1. 到 https://nssm.cc/download 下載
 2. 解壓縮，把 `nssm.exe` 複製到 `C:\Windows\`（或加到 PATH 環境變數）
 
+> ⚠️ **不需要安裝 PostgreSQL！** 這個版本使用 SQLite（單一檔案資料庫），不需要任何資料庫服務。
+
 ---
 
 ## 第二步：下載專案
@@ -82,14 +84,19 @@ TZ=Asia/Taipei
 
 ---
 
-## 第五步：初始化資料庫（建表）
+## 第五步：初始化資料庫
 
-```powershell
-cd C:\repair-tracker-project
+**SQLite 版不需要手動建表！** API server 啟動時會自動：
+1. 建立 `repair_tracker.db` 檔案
+2. 建立所有資料表
+3. 建立預設類別（電氣、水管、結構等）
+4. 建立 admin 帳號（如果沒有任何使用者的話）
 
-# 用 drizzle-kit 建表
-pnpm --filter @workspace/db push
-```
+預設 admin 帳號：
+- 使用者名稱：`admin`
+- 密碼：`admin123`（可在 `.env` 設定 `ADMIN_PASSWORD` 覆蓋）
+
+> ⚠️ 第一次登入後**務必修改 admin 密碼**！
 
 ---
 

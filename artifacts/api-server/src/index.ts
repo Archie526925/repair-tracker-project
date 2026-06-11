@@ -34,6 +34,22 @@ if (existingCats.length === 0) {
   logger.info("Seeded default categories");
 }
 
+// Seed admin user if no users exist
+import { users } from "@workspace/db";
+import bcrypt from "bcryptjs";
+const existingUsers = await db.select().from(users).limit(1);
+if (existingUsers.length === 0) {
+  const password = process.env["ADMIN_PASSWORD"] || "admin123";
+  const hash = await bcrypt.hash(password, 10);
+  await db.insert(users).values({
+    username: "admin",
+    password: hash,
+    role: "admin",
+    displayName: "管理員",
+  });
+  logger.info("Seeded default admin user (username: admin)");
+}
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");

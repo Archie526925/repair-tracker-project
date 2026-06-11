@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { users } from "@workspace/db";
-import { adminOnly } from "../middlewares/auth";
+import { adminOnly, AuthRequest } from "../middlewares/auth";
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get("/admin/users", adminOnly, async (req, res) => {
 // Update user role (admin only)
 router.patch("/admin/users/:id/role", adminOnly, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const { role } = req.body;
 
     if (!role || !["viewer", "admin"].includes(role)) {
@@ -60,7 +60,7 @@ router.patch("/admin/users/:id/role", adminOnly, async (req, res) => {
 // Update user password (admin only)
 router.patch("/admin/users/:id/password", adminOnly, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const { password } = req.body;
 
     if (!password || typeof password !== "string" || password.length < 4) {
@@ -92,7 +92,7 @@ router.patch("/admin/users/:id/password", adminOnly, async (req, res) => {
 // Update user group (admin only)
 router.patch("/admin/users/:id/group", adminOnly, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const { groupId } = req.body;
 
     if (groupId !== null && (typeof groupId !== "number" || groupId < 1)) {
@@ -119,12 +119,12 @@ router.patch("/admin/users/:id/group", adminOnly, async (req, res) => {
 });
 
 // Delete user (admin only)
-router.delete("/admin/users/:id", adminOnly, async (req, res) => {
+router.delete("/admin/users/:id", adminOnly, async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
 
     // Prevent admin from deleting themselves
-    if (req.user?.userId === id) {
+    if (req.user?.userId === String(id)) {
       res.status(400).json({ error: "不能刪除自己的帳號" });
       return;
     }

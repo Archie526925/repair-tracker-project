@@ -7,6 +7,7 @@ export const users = sqliteTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("viewer"),
   groupId: integer("group_id").references(() => groups.id),
+  displayName: text("display_name"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });

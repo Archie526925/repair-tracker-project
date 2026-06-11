@@ -48,7 +48,7 @@ router.post("/custom-fields", async (req, res) => {
       .values({
         name: data.name,
         fieldType: data.fieldType,
-        options: data.options ?? null,
+        options: data.options ? JSON.stringify(data.options) : null,
         required: data.required ?? false,
         sortOrder,
       })

@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { repairsTable } from "./repairs";
 
 export const customFieldDefinitionsTable = sqliteTable("custom_field_definitions", {
@@ -6,7 +7,7 @@ export const customFieldDefinitionsTable = sqliteTable("custom_field_definitions
   name: text("name").notNull(),
   fieldType: text("field_type").notNull(),
   options: text("options"),
-  required: integer("required", { mode: "boolean" }).notNull().default(0),
+  required: integer("required", { mode: "boolean" }).notNull().default(sql`false`),
   sortOrder: integer("sort_order").notNull().default(0),
 });
 

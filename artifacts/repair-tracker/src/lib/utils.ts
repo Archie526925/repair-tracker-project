@@ -16,6 +16,6 @@ export function formatDateTime(input: string | number) {
   const ms = typeof input === "number" ? input * 1000 : input
   const d = new Date(ms)
   const date = d.toLocaleDateString("zh-TW", { timeZone: TZ })
-  const h = d.toLocaleTimeString("zh-TW", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false })
-  return date + " " + h
+  const time = d.toLocaleTimeString("zh-TW", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false, hourCycle: "h23" })
+  return `${date} ${time}`
 }

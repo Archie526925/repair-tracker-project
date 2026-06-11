@@ -16,7 +16,12 @@ router.get("/admin/users", adminOnly, async (req, res) => {
       groupId: users.groupId,
       createdAt: users.createdAt,
     }).from(users);
-    res.json(allUsers);
+    res.json(
+      allUsers.map((u) => ({
+        ...u,
+        createdAt: u.createdAt.toISOString(),
+      })),
+    );
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

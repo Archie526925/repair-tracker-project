@@ -421,7 +421,7 @@ importers:
         version: 3.25.76
 
   artifacts/repair-tracker:
-    devDependencies:
+    dependencies:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.2(react@19.1.0))
@@ -512,9 +512,6 @@ importers:
       '@replit/vite-plugin-dev-banner':
         specifier: 'catalog:'
         version: 0.1.2
-      '@replit/vite-plugin-runtime-error-modal':
-        specifier: 'catalog:'
-        version: 0.0.6
       '@rollup/rollup-darwin-arm64':
         specifier: 4.59.0
         version: 4.59.0

@@ -4,7 +4,7 @@ export const groups = sqliteTable("groups", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   description: text("description"),
-  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).defaultNow().notNull(),
 });
 
 export type Group = typeof groups.$inferSelect;

@@ -23,7 +23,7 @@ router.get("/custom-fields", async (req, res) => {
       fields.map((f) => ({
         ...f,
         fieldType: f.fieldType,
-        options: f.options ?? null,
+        options: f.options ? JSON.parse(f.options) : null,
       })),
     );
   } catch (err) {

@@ -9,7 +9,12 @@ const router = Router();
 router.get("/groups", adminOnly, async (req, res) => {
   try {
     const allGroups = await db.select().from(groups).orderBy(groups.name);
-    return res.json(allGroups);
+    return res.json(
+      allGroups.map((g) => ({
+        ...g,
+        createdAt: g.createdAt.toISOString(),
+      })),
+    );
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });

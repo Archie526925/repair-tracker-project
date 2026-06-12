@@ -9,7 +9,6 @@ echo    報修追蹤系統 - 一鍵安裝程式
 echo ============================================
 echo.
 
-:: Check admin
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo [錯誤] 請以系統管理員身份執行
@@ -20,7 +19,6 @@ if %errorLevel% neq 0 (
 
 set "INSTALL_DIR=C:\repair-tracker-project"
 
-:: === Step 1: Node.js ===
 echo [1/6] 檢查 Node.js...
 where node >nul 2>&1
 if %errorLevel% equ 0 (
@@ -39,7 +37,6 @@ echo         安裝完成
 
 :have_node
 
-:: === Step 2: pnpm ===
 echo [2/6] 檢查 pnpm...
 where pnpm >nul 2>&1
 if %errorLevel% equ 0 (
@@ -52,7 +49,6 @@ echo         安裝完成
 
 :have_pnpm
 
-:: === Step 3: Git ===
 echo [3/6] 檢查 Git...
 where git >nul 2>&1
 if %errorLevel% equ 0 (
@@ -69,7 +65,6 @@ timeout /t 10 /nobreak >nul
 set "PATH=%PATH%;C:\Program Files\Git\cmd"
 echo         安裝完成
 
-:: === Step 4: Get project ===
 :get_project
 echo [4/6] 下載專案...
 
@@ -88,7 +83,6 @@ if exist "%INSTALL_DIR%" (
 )
 cd /d "%INSTALL_DIR%"
 
-:: === Step 5: Build ===
 echo [5/6] 安裝相依套件（3-5 分鐘）...
 call pnpm install --no-frozen-lockfile
 if %errorLevel% neq 0 ( echo [錯誤] 安裝失敗 & pause & exit /b 1 )
@@ -102,29 +96,29 @@ call pnpm --filter @workspace/api-server build
 call pnpm --filter @workspace/repair-tracker build
 echo         建置完成
 
-:: === Step 6: Configure ===
 echo [6/6] 設定環境...
 
 if not exist "artifacts\api-server\.env" (
-    powershell -Command "$s = -join ((48..57)+(65..90)+(97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ }); Set-Content -Path 'artifacts\api-server\.env' -Value \"PORT=3000`nDATABASE_URL=./repair_tracker.db`nJWT_SECRET=$s`nTZ=Asia/Taipei\" -Encoding UTF8"
+    echo PORT=3000> artifacts\api-server\.env
+    echo DATABASE_URL=./repair_tracker.db>> artifacts\api-server\.env
+    echo JWT_SECRET=repair...26>> artifacts\api-server\.env
+    echo TZ=Asia/Taipei>> artifacts\api-server\.env
     echo         .env 已建立
 )
 
-:: start.bat
+REM == 建立 start.bat（包含環境變數）==
 (
 echo @echo off
 echo cd /d C:\repair-tracker-project
-echo start "Repair API" cmd /c "cd artifacts\api-server ^&^& node --enable-source-maps dist\index.mjs"
+echo start "Repair API" cmd /c "cd artifacts\api-server ^& set PORT=3000 ^& set DATABASE_URL=./repair_tracker.db ^& set JWT_SECRET=*** ^& set TZ=Asia/Taipei ^& node --enable-source-maps dist\index.mjs"
 echo timeout /t 3 /nobreak ^>nul
-echo start "Repair Frontend" cmd /c "cd artifacts\repair-tracker ^&^& npx vite preview --host 0.0.0.0 --port 5173"
+echo start "Repair Frontend" cmd /c "cd artifacts\repair-tracker ^& npx vite preview --host 0.0.0.0 --port 5173"
 echo timeout /t 2 /nobreak ^>nul
 echo start http://localhost:5173
 ) > "%INSTALL_DIR%\start.bat"
 
-:: Desktop shortcut
 powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory') + '\報修追蹤系統.lnk'); $sc.TargetPath = 'C:\repair-tracker-project\start.bat'; $sc.WorkingDirectory = 'C:\repair-tracker-project'; $sc.Save()"
 
-:: Firewall
 netsh advfirewall firewall add rule name="RepairAPI-3000" dir=in action=allow protocol=tcp localport=3000 >nul 2>&1
 netsh advfirewall firewall add rule name="RepairFE-5173" dir=in action=allow protocol=tcp localport=5173 >nul 2>&1
 

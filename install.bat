@@ -43,6 +43,14 @@ echo [2/5] 安裝 pnpm...
 where pnpm >nul 2>&1
 if %errorLevel% equ 0 goto :have_pnpm
 call npm install -g pnpm >nul 2>&1
+:: Refresh PATH so pnpm can be found
+set "PATH=%PATH%;%APPDATA%\npm"
+where pnpm >nul 2>&1
+if %errorLevel% neq 0 (
+    :: Try the npm global bin path directly
+    for /f "tokens=*" %%i in ('npm config get prefix') do set "NPM_PREFIX=%%i"
+    set "PATH=%PATH%;%NPM_PREFIX%"
+)
 
 :have_pnpm
 

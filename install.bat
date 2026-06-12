@@ -12,20 +12,21 @@ echo.
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo [錯誤] 請以系統管理員身份執行
-    echo 右鍵 install.bat ^> 以系統管理員身份執行
+    echo 右鍵此檔案 ^> 以系統管理員身份執行
     pause
     exit /b 1
 )
 
 set "INSTALL_DIR=C:\repair-tracker-project"
 
-echo [1/6] 檢查 Node.js...
+:: === Step 1: Node.js ===
+echo [1/5] 檢查 Node.js...
 where node >nul 2>&1
 if %errorLevel% equ 0 (
     for /f "tokens=*" %%v in ('node -v') do echo         已安裝: %%v
     goto :have_node
 )
-echo         未安裝，下載中...
+echo         未安裝，下載中（約 1 分鐘）...
 set "NODE_MSI=node-v20.18.1-x64.msi"
 if not exist "%TEMP%\%NODE_MSI%" (
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.18.1/%NODE_MSI%' -OutFile '%TEMP%\%NODE_MSI%' -UseBasicParsing"
@@ -37,101 +38,86 @@ echo         安裝完成
 
 :have_node
 
-echo [2/6] 檢查 pnpm...
+:: === Step 2: pnpm ===
+echo [2/5] 安裝 pnpm...
 where pnpm >nul 2>&1
-if %errorLevel% equ 0 (
-    for /f "tokens=*" %%v in ('pnpm -v') do echo         已安裝: v%%v
-    goto :have_pnpm
-)
-echo         安裝 pnpm...
-call npm install -g pnpm
-echo         安裝完成
+if %errorLevel% equ 0 goto :have_pnpm
+call npm install -g pnpm >nul 2>&1
 
 :have_pnpm
 
-echo [3/6] 檢查 Git...
-where git >nul 2>&1
-if %errorLevel% equ 0 (
-    for /f "tokens=*" %%v in ('git --version') do echo         %%v
-    goto :get_project
-)
-echo         未安裝，下載中...
-set "GIT_EXE=Git-2.45.2-64-bit.exe"
-if not exist "%TEMP%\%GIT_EXE%" (
-    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/%GIT_EXE%' -OutFile '%TEMP%\%GIT_EXE%' -UseBasicParsing"
-)
-"%TEMP%\%GIT_EXE%" /VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"
-timeout /t 10 /nobreak >nul
-set "PATH=%PATH%;C:\Program Files\Git\cmd"
-echo         安裝完成
-
-:get_project
-echo [4/6] 下載專案...
+:: === Step 3: 下載專案 ===
+echo [3/5] 下載專案...
 
 if exist "%INSTALL_DIR%" (
-    echo         更新現有安裝...
+    echo         專案已存在，更新中...
     cd /d "%INSTALL_DIR%"
-    git pull
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/Archie526925/repair-tracker-project/archive/refs/heads/main.zip' -OutFile '%TEMP%\repo.zip' -UseBasicParsing; Expand-Archive -Path '%TEMP%\repo.zip' -DestinationPath '%TEMP%\' -Force"
+    xcopy "%TEMP%\repair-tracker-project-main\*" "%INSTALL_DIR%\" /E /Y /Q
+    rmdir /s /q "%TEMP%\repair-tracker-project-main" 2>nul
+    del "%TEMP%\repo.zip" 2>nul
+) else if exist "%~dp0artifacts\api-server" (
+    echo         從本地複製...
+    xcopy "%~dp0*" "%INSTALL_DIR%\" /E /I /Y /Q
 ) else (
-    if exist "%~dp0artifacts\api-server" (
-        echo         從本地複製...
-        xcopy "%~dp0*" "%INSTALL_DIR%\" /E /I /Y /Q
-    ) else (
-        echo         從 GitHub 複製...
-        git clone https://github.com/Archie526925/repair-tracker-project.git "%INSTALL_DIR%"
-    )
+    echo         從 GitHub 下載...
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://github.com/Archie526925/repair-tracker-project/archive/refs/heads/main.zip' -OutFile '%TEMP%\repo.zip' -UseBasicParsing; Expand-Archive -Path '%TEMP%\repo.zip' -DestinationPath 'C:\' -Force"
+    ren "C:\repair-tracker-project-main" "repair-tracker-project"
+    del "%TEMP%\repo.zip" 2>nul
 )
+
 cd /d "%INSTALL_DIR%"
 
-echo [5/6] 安裝相依套件（3-5 分鐘）...
+:: === Step 4: Build ===
+echo [4/5] 安裝相依套件（3-5 分鐘）...
 call pnpm install --no-frozen-lockfile
 if %errorLevel% neq 0 ( echo [錯誤] 安裝失敗 & pause & exit /b 1 )
 
 echo         建置中...
 call pnpm --filter @workspace/api-zod build
 call pnpm --filter @workspace/db build
-call pnpm --filter @workspace/api-spec build
 call pnpm --filter @workspace/api-client-react build
 call pnpm --filter @workspace/api-server build
 call pnpm --filter @workspace/repair-tracker build
 echo         建置完成
 
-echo [6/6] 設定環境...
+:: === Step 5: 設定 ===
+echo [5/5] 設定環境...
 
 if not exist "artifacts\api-server\.env" (
     echo PORT=3000> artifacts\api-server\.env
     echo DATABASE_URL=./repair_tracker.db>> artifacts\api-server\.env
-    echo JWT_SECRET=repair...26>> artifacts\api-server\.env
+    echo JWT_SECRET=*** artifacts\api-server\.env
     echo TZ=Asia/Taipei>> artifacts\api-server\.env
-    echo         .env 已建立
 )
 
-REM == 建立 start.bat（包含環境變數）==
+:: start.bat
 (
 echo @echo off
-echo cd /d C:\repair-tracker-project
-echo start "Repair API" cmd /c "cd artifacts\api-server ^& set PORT=3000 ^& set DATABASE_URL=./repair_tracker.db ^& set JWT_SECRET=*** ^& set TZ=Asia/Taipei ^& node --enable-source-maps dist\index.mjs"
+echo start "Repair API" cmd /c "cd /d C:\repair-tracker-project\artifacts\api-server ^& set PORT=3000 ^& set DATABASE_URL=./repair_tracker.db ^& set JWT_SECRET=*** ^& set TZ=Asia/Taipei ^& node --enable-source-maps dist\index.mjs"
 echo timeout /t 3 /nobreak ^>nul
-echo start "Repair Frontend" cmd /c "cd artifacts\repair-tracker ^& npx vite preview --host 0.0.0.0 --port 5173"
+echo start "Repair Frontend" cmd /c "cd /d C:\repair-tracker-project\artifacts\repair-tracker ^& npx vite preview --host 0.0.0.0 --port 5173"
 echo timeout /t 2 /nobreak ^>nul
 echo start http://localhost:5173
 ) > "%INSTALL_DIR%\start.bat"
 
-powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory') + '\報修追蹤系統.lnk'); $sc.TargetPath = 'C:\repair-tracker-project\start.bat'; $sc.WorkingDirectory = 'C:\repair-tracker-project'; $sc.Save()"
+:: 桌面捷徑
+powershell -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut([Environment]::GetFolderPath('CommonDesktopDirectory') + '\報修追蹤系統.lnk'); $sc.TargetPath = 'C:\repair-tracker-project\start.bat'; $sc.WorkingDirectory = 'C:\repair-tracker-project'; $sc.Save()" 2>nul
 
-netsh advfirewall firewall add rule name="RepairAPI-3000" dir=in action=allow protocol=tcp localport=3000 >nul 2>&1
-netsh advfirewall firewall add rule name="RepairFE-5173" dir=in action=allow protocol=tcp localport=5173 >nul 2>&1
+:: 防火牆
+netsh advfirewall firewall add rule name="RepairAPI" dir=in action=allow protocol=tcp localport=3000 >nul 2>&1
+netsh advfirewall firewall add rule name="RepairFE" dir=in action=allow protocol=tcp localport=5173 >nul 2>&1
 
 echo.
 echo ============================================
 echo    安裝完成！
 echo ============================================
-echo    位置: C:\repair-tracker-project
-echo    啟動: 桌面捷徑「報修追蹤系統」
-echo    帳號: admin / 密碼: admin123
-echo    網址: http://localhost:5173
+echo    啟動：桌面捷徑「報修追蹤系統」
+echo    網址：http://localhost:5173
+echo    帳號：admin / 密碼：admin123
 echo ============================================
 echo.
 echo 正在啟動...
-call "%INSTALL_DIR%\start.bat"
+cd /d "%INSTALL_DIR%"
+call start.bat
 pause

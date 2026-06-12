@@ -19,6 +19,9 @@ const queryClient = new QueryClient();
 
 function AppRouter() {
   const [location] = useLocation();
+
+  if (location === "/login") return <LoginPage />;
+
   const userRole = (() => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -29,8 +32,6 @@ function AppRouter() {
       return null;
     }
   })();
-
-  if (location === "/login") return <LoginPage />;
 
   const isAdmin = userRole === "admin";
 

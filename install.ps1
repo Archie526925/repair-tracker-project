@@ -1,29 +1,14 @@
-# install.ps1 - 報修追蹤系統一鍵安裝
-# 以系統管理員身份執行此腳本
-
 $ErrorActionPreference = "Stop"
 $INSTALL_DIR = "C:\repair-tracker-project"
 
-function Write-Step {
-    param([string]$msg)
-    Write-Host "  $msg" -ForegroundColor Cyan
-}
+function Write-Step { param([string]$msg) Write-Host "  $msg" -ForegroundColor Cyan }
+function Write-Ok { param([string]$msg) Write-Host "  $msg" -ForegroundColor Green }
+function Write-Err { param([string]$msg) Write-Host "  $msg" -ForegroundColor Red; pause; exit 1 }
+function Write-Warn { param([string]$msg) Write-Host "  $msg" -ForegroundColor Yellow }
 
-function Write-Ok {
-    param([string]$msg)
-    Write-Host "  $msg" -ForegroundColor Green
-}
-
-function Write-Err {
-    param([string]$msg)
-    Write-Host "  [錯誤] $msg" -ForegroundColor Red
-    pause
-    exit 1
-}
-
-# 檢查系統管理員
+# Check admin
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Err "請以系統管理員身份執行此腳本。`n右鍵 install.bat > 以系統管理員身份執行"
+    Write-Err "[錯誤] 請以系統管理員身份執行"
 }
 
 Write-Host ""
@@ -33,79 +18,64 @@ Write-Host "============================================" -ForegroundColor Yello
 Write-Host ""
 
 # === Step 1: Node.js ===
-Write-Host "[1/6] 檢查 Node.js..." -ForegroundColor White
-try {
-    $nodeVer = & node -v 2>$null
-    if ($nodeVer) { Write-Ok "已安裝: $nodeVer"; goto :skipNode }
-} catch {}
+Write-Host "[1/5] 檢查 Node.js..." -ForegroundColor White
+$nodePath = Get-Command node -ErrorAction SilentlyContinue
+if ($nodePath) {
+    Write-Ok "已安裝: $(node -v)"
+} else {
+    Write-Step "未安裝，下載中（約 1 分鐘）..."
+    $nodeMsi = "node-v20.18.1-x64.msi"
+    $nodeUrl = "https://nodejs.org/dist/v20.18.1/$nodeMsi"
+    $nodeFile = Join-Path $env:TEMP $nodeMsi
 
-Write-Step "未安裝，下載中..."
-$nodeMsi = "node-v20.18.1-x64.msi"
-$nodeUrl = "https://nodejs.org/dist/v20.18.1/$nodeMsi"
-$nodePath = Join-Path $env:TEMP $nodeMsi
+    if (-not (Test-Path $nodeFile)) {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeFile -UseBasicParsing
+    }
 
-if (-not (Test-Path $nodePath)) {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $nodeUrl -OutFile $nodePath -UseBasicParsing
+    Write-Step "安裝 Node.js..."
+    $proc = Start-Process msiexec -ArgumentList "/i `"$nodeFile`" /qn /norestart" -Wait -PassThru
+    Start-Sleep -Seconds 10
+
+    # Refresh PATH from registry
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    $nodePath = Get-Command node -ErrorAction SilentlyContinue
+    if ($nodePath) {
+        Write-Ok "安裝完成: $(node -v)"
+    } else {
+        Write-Err "Node.js 安裝失敗"
+    }
 }
-Write-Step "安裝 Node.js..."
-Start-Process msiexec -ArgumentList "/i `"$nodePath`" /qn /norestart" -Wait
-Start-Sleep -Seconds 8
-
-$env:Path = "$env:Path;C:\Program Files\nodejs;$env:APPDATA\npm"
-try {
-    $nodeVer = & node -v 2>$null
-    Write-Ok "安裝完成: $nodeVer"
-} catch {
-    Write-Err "Node.js 安裝失敗"
-}
-
-:skipNode
 
 # === Step 2: pnpm ===
-Write-Host "[2/6] 檢查 pnpm..." -ForegroundColor White
-try {
-    $pnpmVer = & pnpm -v 2>$null
-    if ($pnpmVer) { Write-Ok "已安裝: v$pnpmVer"; goto :skipPnpm }
-} catch {}
+Write-Host "[2/5] 安裝 pnpm..." -ForegroundColor White
+$pnpmPath = Get-Command pnpm -ErrorAction SilentlyContinue
+if ($pnpmPath) {
+    Write-Ok "已安裝: v$(pnpm -v)"
+} else {
+    Write-Step "安裝 pnpm..."
+    & npm install -g pnpm
+    if ($LASTEXITCODE -ne 0) { & npm install -g pnpm }
 
-Write-Step "安裝 pnpm..."
-& npm install -g pnpm
-Write-Ok "安裝完成"
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-:skipPnpm
-
-# === Step 3: Git ===
-Write-Host "[3/6] 檢查 Git..." -ForegroundColor White
-try {
-    $gitVer = & git --version 2>$null
-    if ($gitVer) { Write-Ok $gitVer; goto :skipGit }
-} catch {}
-
-Write-Step "未安裝，下載中..."
-$gitExe = "Git-2.45.2-64-bit.exe"
-$gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/$gitExe"
-$gitPath = Join-Path $env:TEMP $gitExe
-
-if (-not (Test-Path $gitPath)) {
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $gitUrl -OutFile $gitPath -UseBasicParsing
+    $pnpmPath = Get-Command pnpm -ErrorAction SilentlyContinue
+    if ($pnpmPath) {
+        Write-Ok "安裝完成: v$(pnpm -v)"
+    } else {
+        Write-Warn "pnpm 可能未正確安裝，繼續嘗試..."
+    }
 }
-Write-Step "安裝 Git..."
-Start-Process -FilePath $gitPath -ArgumentList "/VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /COMPONENTS=`"icons,ext\reg\shellhere,assoc,assoc_sh`"" -Wait
-Start-Sleep -Seconds 10
-$env:Path = "$env:Path;C:\Program Files\Git\cmd"
-Write-Ok "安裝完成"
 
-:skipGit
-
-# === Step 4: Clone repo ===
-Write-Host "[4/6] 下載專案..." -ForegroundColor White
+# === Step 3: Download project ===
+Write-Host "[3/5] 下載專案..." -ForegroundColor White
 
 if (Test-Path $INSTALL_DIR) {
     Write-Step "更新現有安裝..."
     Push-Location $INSTALL_DIR
-    & git pull
+    try { & git pull } catch { Write-Warn "git pull 失敗，略過" }
     Pop-Location
 } else {
     $localSrc = Join-Path $PSScriptRoot "artifacts\api-server"
@@ -113,33 +83,33 @@ if (Test-Path $INSTALL_DIR) {
         Write-Step "從本地複製..."
         Copy-Item -Path (Join-Path $PSScriptRoot "*") -Destination $INSTALL_DIR -Recurse -Force
     } else {
-        Write-Step "從 GitHub 複製..."
-        & git clone https://github.com/Archie526925/repair-tracker-project.git $INSTALL_DIR
+        Write-Step "從 GitHub 下載..."
+        $zipFile = Join-Path $env:TEMP "repo.zip"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri "https://github.com/Archie526925/repair-tracker-project/archive/refs/heads/main.zip" -OutFile $zipFile -UseBasicParsing
+        Expand-Archive -Path $zipFile -DestinationPath "C:\" -Force
+        Remove-Item $zipFile -Force
+        Rename-Item "C:\repair-tracker-project-main" "repair-tracker-project"
     }
 }
 
-# === Step 5: Build ===
-Write-Host "[5/6] 安裝相依套件（3-5 分鐘）..." -ForegroundColor White
+# === Step 4: Build ===
+Write-Host "[4/5] 安裝相依套件（3-5 分鐘）..." -ForegroundColor White
 Push-Location $INSTALL_DIR
 & pnpm install --no-frozen-lockfile
 if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Err "相依套件安裝失敗" }
 
 Write-Step "建置中..."
-@(
-    "@workspace/api-zod",
-    "@workspace/db",
-    "@workspace/api-client-react",
-    "@workspace/api-server",
-    "@workspace/repair-tracker"
-) | ForEach-Object {
-    & pnpm --filter $_ build
-    if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Err "Build 失敗: $_" }
+$packages = @("@workspace/api-zod", "@workspace/db", "@workspace/api-client-react", "@workspace/api-server", "@workspace/repair-tracker")
+foreach ($pkg in $packages) {
+    & pnpm --filter $pkg build
+    if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Err "Build 失敗: $pkg" }
 }
 Pop-Location
 Write-Ok "建置完成"
 
-# === Step 6: Configure ===
-Write-Host "[6/6] 設定環境..." -ForegroundColor White
+# === Step 5: Configure ===
+Write-Host "[5/5] 設定環境..." -ForegroundColor White
 
 $envFile = Join-Path $INSTALL_DIR "artifacts\api-server\.env"
 if (-not (Test-Path $envFile)) {
@@ -148,8 +118,7 @@ if (-not (Test-Path $envFile)) {
 PORT=3000
 DATABASE_URL=./repair_tracker.db
 JWT_SECRET=$jwt
-TZ=Asia/Taipei
-"@ | Set-Content -Path $envFile -Encoding UTF8
+...n"@ | Set-Content -Path $envFile -Encoding UTF8
     Write-Step ".env 已建立"
 }
 
@@ -172,20 +141,20 @@ $sc.WorkingDirectory = $INSTALL_DIR
 $sc.Save()
 
 # Firewall
-netsh advfirewall firewall add rule name="RepairAPI-3000" dir=in action=allow protocol=tcp localport=3000 | Out-Null
-netsh advfirewall firewall add rule name="RepairFE-5173" dir=in action=allow protocol=tcp localport=5173 | Out-Null
+netsh advfirewall firewall add rule name="RepairAPI" dir=in action=allow protocol=tcp localport=3000 | Out-Null
+netsh advfirewall firewall add rule name="RepairFE" dir=in action=allow protocol=tcp localport=5173 | Out-Null
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "   安裝完成！" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
-Write-Host "   位置: C:\repair-tracker-project"
-Write-Host "   啟動: 桌面捷徑「報修追蹤系統」"
-Write-Host "   帳號: admin / 密碼: admin123"
-Write-Host "   網址: http://localhost:5173"
+Write-Host "   啟動：桌面捷徑「報修追蹤系統」"
+Write-Host "   網址：http://localhost:5173"
+Write-Host "   帳號：admin / 密碼：admin123"
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "正在啟動..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
 Push-Location $INSTALL_DIR
 cmd /c "start.bat"
 Pop-Location

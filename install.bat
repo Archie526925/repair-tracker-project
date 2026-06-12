@@ -18,6 +18,8 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
+set "INSTALL_DIR=C:\repair-tracker-project"
+
 :: === Step 1: Node.js ===
 echo [1/6] 檢查 Node.js...
 where node >nul 2>&1
@@ -55,7 +57,7 @@ echo [3/6] 檢查 Git...
 where git >nul 2>&1
 if %errorLevel% equ 0 (
     for /f "tokens=*" %%v in ('git --version') do echo         %%v
-    goto :have_git
+    goto :get_project
 )
 echo         未安裝，下載中...
 set "GIT_EXE=Git-2.45.2-64-bit.exe"
@@ -67,11 +69,9 @@ timeout /t 10 /nobreak >nul
 set "PATH=%PATH%;C:\Program Files\Git\cmd"
 echo         安裝完成
 
-:have_git
-
 :: === Step 4: Get project ===
+:get_project
 echo [4/6] 下載專案...
-set "INSTALL_DIR=C:\repair-tracker-project"
 
 if exist "%INSTALL_DIR%" (
     echo         更新現有安裝...
